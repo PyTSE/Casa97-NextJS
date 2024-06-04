@@ -3,6 +3,7 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import Background from '../../public/back.jpeg';
 import Image from "next/image";
+import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider as NextThemeProvider } from "next-themes";
 
 const inter = Montserrat({ subsets: ["latin"] });
@@ -16,6 +17,7 @@ const RootLayout = ({ children }) => {
         <Image src={Background} layout="fill" className="h-screen w-full object-cover opacity-30" alt="" />
         <div className="justify-center flex items-center p-4">
           <main>{children}</main>
+          <Toaster />
         </div>
         </div>
         </NextThemeProvider>

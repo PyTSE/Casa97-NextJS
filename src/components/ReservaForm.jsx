@@ -1,3 +1,4 @@
+"use client"
 import React, { useState } from 'react';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
@@ -8,10 +9,12 @@ import { useTheme } from "next-themes"
 import Image from 'next/image';
 import { HandPlatter } from 'lucide-react';
 import Logo from '../../public/casa97.png'
+import { useToast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from './ui/select';
 
 const ReservaForm = () => {
+  const { toast } = useToast()
   const { theme, setTheme } = useTheme()
   const [nome, setNome] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
@@ -160,7 +163,13 @@ const ReservaForm = () => {
               </>
             )}
              {showDropdowns ? (
-            <Button type="button" onClick={handleEscolherMesaClick} className="mt-[20px]">
+            <Button type="button"
+              onClick={() => {
+                toast({
+                  title: "Reserva realiazada!",
+                  description: "Sexta-Feira, 10 de Fevereiro, 2024 as 20:00h",
+                })
+            }} className="mt-[20px]">
                 <CalendarCheck className="mr-2 h-4 w-4" />Confirmar reserva!
             </Button>
                ) : (
