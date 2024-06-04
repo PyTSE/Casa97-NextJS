@@ -10,11 +10,11 @@ const inter = Montserrat({ subsets: ["latin"] });
 const RootLayout = ({ children }) => {
   return (
     <html lang="en">
-        <body className="flex justify-center items-center">
+        <body className="flex justify-center items-center h-screen">
         <NextThemeProvider attribute="class" defaultTheme="light" enableSystem>
-        <div className={`${inter.className} flex justify-between`}>
-        <Image src={Background} layout="fill" className="h-full w-full object-cover opacity-30" alt="" />
-        <div className="z-10 justify-center flex items-center p-4">
+        <div className={`${inter.className} flex justify-between h-full`}>
+        <Image src={Background} layout="fill" className="h-screen w-full object-cover opacity-30" alt="" />
+        <div className="justify-center flex items-center p-4">
           <main>{children}</main>
         </div>
         </div>
