@@ -4,7 +4,7 @@ import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { CalendarCheck, Moon, Sun } from "lucide-react"
+import { CalendarCheck, Moon, Sun, X } from "lucide-react"
 import { useTheme } from "next-themes"
 import Image from 'next/image';
 import { HandPlatter } from 'lucide-react';
@@ -164,10 +164,11 @@ const ReservaForm = () => {
             )}
              {showDropdowns ? (
             <Button type="button"
-              onClick={() => {
-                toast({
-                  title: "Reserva realiazada!",
-                  description: "Sexta-Feira, 10 de Fevereiro, 2024 as 20:00h",
+            onClick={() => {
+              toast({
+                icon: <CalendarCheck />,
+                title: "Reserva realizada!",
+                description: "Sexta-Feira, 10 de Fevereiro, 2024 as 20:00h",
                 })
             }} className="mt-[20px]">
                 <CalendarCheck className="mr-2 h-4 w-4" />Confirmar reserva!
