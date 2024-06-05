@@ -1,13 +1,16 @@
 "use client";
 import { Montserrat } from "next/font/google";
-import "./globals.css";
-import Background from '../../public/back.jpeg';
+import "../globals.css";
+import Background from '../../../public/back.jpeg';
 import Image from "next/image";
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider as NextThemeProvider } from "next-themes";
 
 const inter = Montserrat({ subsets: ["latin"] });
-
+export const Metadata = {
+  title: 'Casa97',
+  description: 'Restaurante Casa97',
+}
 const RootLayout = ({ children }) => {
   return (
     <html lang="en">
