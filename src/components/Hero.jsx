@@ -1,8 +1,11 @@
 import React from 'react'
+import { AspectRatioDemo } from './AspectRatio'
 
 const Hero = () => {
   return (
-    <div>Hero</div>
+    <div>
+      <AspectRatioDemo></AspectRatioDemo>
+    </div>
   )
 }
 

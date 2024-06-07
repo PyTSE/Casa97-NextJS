@@ -1,7 +1,9 @@
 "use client";
 
+import Hero from "@/components/Hero";
+
 export default function LandingPage() {
   return (
-    <h1>Hellooworld</h1>
+    <Hero>Hero</Hero>
   );
 }
