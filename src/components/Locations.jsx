@@ -3,8 +3,8 @@ import SacadaLocation from './SacadaLocation';
 
 const Locations = () => {
   return (
-    <section className='flexCenter flex-col mt-10'>
-        <div className=' padding-container max-container w-full pb-24'>
+    <section className='flexCenter flex-col lg:mt-20 mt-10 my-10'>
+        <div className=' padding-container max-container w-full lg:pb-28 pb-10'>
             <p className='uppercase regular-18 -mt-1 mb-3 text-gray-500'>
                 Estamos aqui para você
             </p>

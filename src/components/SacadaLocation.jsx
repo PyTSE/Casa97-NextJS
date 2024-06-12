@@ -47,7 +47,7 @@ const locations = [
     };
   
     return (
-      <div className='padding-container max-container w-full pb-24'>
+      <div className='padding-container max-container w-full lg:pb-28 pb-10'>
         <div className='flex flex-wrap justify-between gap-5 lg:gap-10 mt-8'>
           <div className='flex flex-col'>
             {locations.map((location) => (

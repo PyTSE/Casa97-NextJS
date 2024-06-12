@@ -1,21 +1,21 @@
 import React from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import Image from 'next/image'
 import BookingButton from './BookingButton'
 import { EVENTS_INFO } from '@/constants'
 
 const EventsSection = () => {
   return (
-    <section className='bg-events sm:bg-events-sm flexCenter flex-col my-4 bg-gray-500'>
-      <h2 className='bold-40 lg:bold-64 xl:max-w-[600px] my-10 text-gray-50'>Serviços Extras</h2>
-      <div className='flex flex-wrap justify-between gap-5 lg:gap-10 mt-8'>
+    <section className='bg-events sm:bg-events-sm flexCenter flex-col my-8 bg-gray-500'>
+      <h2 className='bold-40 lg:bold-64 xl:max-w-[600px] lg:my-2 lg:mt-12 mt-4 text-gray-50'>Serviços Extras</h2>
+      <div className='flex flex-wrap flexCenter justify-between gap-5 lg:gap-10 lg:mt-24 mt-10'>
       {EVENTS_INFO.map((event) => (
         <div className='flexCenter'>
             <div key={event.id} className="w-96">
               <Card className="h-full">
                 <CardHeader>
-                  <CardTitle>{event.title}</CardTitle>
-                  <div className="flex items-center space-x-4 rounded-md border mt-3">
+                  <CardTitle className='mb-4'>{event.title}</CardTitle>
+                  <div className="flex items-center space-x-4 rounded-md border">
                       <Image src={event.photo} width={432} height={400} className='rounded-md'/>
                   </div>
                 </CardHeader>
@@ -26,7 +26,7 @@ const EventsSection = () => {
                   <div className='flex flexCenter'>
                     <BookingButton
                       type="button"
-                      title="Reservar Agora!"
+                      title="Saber mais!"
                       variant="h-14"
                       href="/booking"
                     />
