@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Home, Headset, Table } from 'lucide-react';
+import { Calendar, Home, Headset, Table,  ListChecks} from 'lucide-react';
 import {
   Command,
   CommandGroup,
@@ -18,6 +18,8 @@ function renderIcon(iconName) {
       return <Headset />;
     case 'Table':
       return <Table />;
+    case 'ListChecks':
+      return <ListChecks />;
     default:
       return null;
   }
@@ -42,6 +44,11 @@ export default function Sidebar() {
           text: "Gerenciar Mesas dos Locais",
           icon: "Table",
           link: "/localtables",
+        },
+        {
+          text: "Gerenciar Itens Adicionais",
+          icon: "ListChecks",
+          link: "/itens",
         },
       ],
     },

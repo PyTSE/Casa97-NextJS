@@ -25,7 +25,7 @@ const locations = [
   };
 
   const SacadaLocation = () => {
-    const [selectedLocation, setSelectedLocation] = useState(null);
+    const [selectedLocation, setSelectedLocation] = useState("Sacada");
     const [photos, setPhotos] = useState(photosSacada);
     const handleLocationClick = (location) => {
       setSelectedLocation(location);
@@ -48,8 +48,8 @@ const locations = [
   
     return (
       <div className='padding-container max-container w-full lg:pb-28 pb-10'>
-        <div className='flex flex-wrap justify-between gap-5 lg:gap-10 mt-8'>
-          <div className='flex flex-col'>
+        <div className='flex flex-wrap xl:flex-nowrap lg:flex-row justify-between gap-5 lg:gap-10 mt-8'>
+          <div className='flex flex-col justify-center'>
             {locations.map((location) => (
               <a
                 key={location} id='location-a'
@@ -60,14 +60,16 @@ const locations = [
               </a>
             ))}
           </div>
-          <div className='bg-gray-400 rounded-sm w-96'>
-            {selectedLocation && (
-              <p className='regular-16 text-gray-500 xl:max-w-[520px]'>
-                {descriptions[selectedLocation]}
-              </p>
-            )}
+          <div className='flex justify-center w-full'>
+            <div className='bg-gray-400 rounded-sm w-96 p-2'>
+              {selectedLocation && (
+                <p className='regular-16 text-gray-500 xl:max-w-[520px]'>
+                  {descriptions[selectedLocation]}
+                </p>
+              )}
+            </div>
           </div>
-          <div className='flex flexCenter flex-col gap-5'>
+          <div className='flexCenter flex-col justify-center w-full'>
             <div className='w-96'>
               <CarouselDemo photos={photos} />
             </div>
@@ -78,5 +80,3 @@ const locations = [
   }
   
   export default SacadaLocation;
-  
-  

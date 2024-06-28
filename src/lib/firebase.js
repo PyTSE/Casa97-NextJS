@@ -3,13 +3,13 @@ import { getDatabase, ref, push, set, remove, update, get } from "firebase/datab
 import { getStorage, ref as storageRef, uploadBytes } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBcCzimZn9XCqH5gpCCcWUteGfkLvSgr9Q",
-  authDomain: "casa97-f2434.firebaseapp.com",
-  databaseURL: "https://casa97-f2434-default-rtdb.firebaseio.com",
-  projectId: "casa97-f2434",
-  storageBucket: "casa97-f2434.appspot.com",
-  messagingSenderId: "466978037045",
-  appId: "1:466978037045:web:be929e19b4f3191e1bc07c"
+  apiKey: "AIzaSyBptHQ733xIF3Bg3jLcF_FA_SHUa6M5-AI",
+  authDomain: "casa97-a53eb.firebaseapp.com",
+  databaseURL: "https://casa97-a53eb-default-rtdb.firebaseio.com",
+  projectId: "casa97-a53eb",
+  storageBucket: "casa97-a53eb.appspot.com",
+  messagingSenderId: "572096461268",
+  appId: "1:572096461268:web:49b44dd4a3501b486bbe41"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);

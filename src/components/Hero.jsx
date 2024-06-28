@@ -29,9 +29,10 @@ const Hero = () => {
   return (
     <section className='flexCenter bg-hero-sm lg:bg-hero max-container padding-container flex flex-col gap-20 py-10 pb-32 md:gap-28 lg:py-20 xl:flex-row'>
       <div className='relative z-20 flex flex-1 flex-col xl:w-1/2 py-28'>
-        <h1 className='bold-52 text-gray-50 lg:bold-88'>A melhor casa da cidade!</h1>
+        <h1 className='bold-52 text-gray-50 lg:bold-88'>A Casa mais charmosa de Joinville!</h1>
         <p className='regular-16 mt-6 text-gray-400 xl:max-w-[520px]'>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquam, sit error vero ab, deleniti distinctio officiis ipsa voluptas quisquam cum veritatis. Dolorum eaque deserunt asperiores inventore quos illo maiores amet.
+        À primeira vista, nem parece um restaurante. A entrada, as mesas, o banheiro, tudo lembra uma casa normal. Um portão de ferro, um jardim na entrada e a porta principal que dá acesso para os fundos da casa.
+        Tudo simples, mas elegante e muito bonito. Atendimento personalizado, alimentos frescos e bem preparados, temperos diferenciados. Oferecer bem-estar e trazer as boas lembranças do aconchego do lar são a nossa missão.
         </p>
         <div className='my-11 flex flex-wrap gap-5 justify-center lg:justify-start'>
           <div className='flex items-center gap-2'>

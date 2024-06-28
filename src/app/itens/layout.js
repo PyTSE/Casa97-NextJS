@@ -4,7 +4,6 @@ import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import "@/app/globals.css"
 import { ThemeProvider as NextThemeProvider } from "next-themes";
-import { Toaster } from "@/components/ui/toaster";
 
 const inter = Montserrat({ subsets: ["latin"] });
 
@@ -14,7 +13,6 @@ export default function RootLayout({
   return (
     <html>
       <body>
-      <Toaster />
     <NextThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <div className={`${inter.className} flex justify-between`}>
         <div>

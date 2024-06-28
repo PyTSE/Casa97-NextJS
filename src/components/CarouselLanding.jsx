@@ -11,7 +11,7 @@ import {
 
 export function CarouselDemo({ photos }) {
   return (
-    <Carousel  className="w-full max-w-7xl h-full">
+    <Carousel className="w-full max-w-7xl h-full bg-slate-600 relative">
       <CarouselContent className="flex">
         {photos.map((photo, index) => (
           <CarouselItem key={index} className="flex-shrink-0 basis-full lg:basis-full">
@@ -31,8 +31,8 @@ export function CarouselDemo({ photos }) {
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious />
-      <CarouselNext />
+      <CarouselPrevious className="carousel-arrow left-2" />
+      <CarouselNext className="carousel-arrow right-2" />
     </Carousel>
   );
 }

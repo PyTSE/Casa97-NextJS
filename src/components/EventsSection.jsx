@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import Image from 'next/image'
 import BookingButton from './BookingButton'
 import { EVENTS_INFO } from '@/constants'
+import { CarouselDemo } from './CarouselLanding'
 
 const EventsSection = () => {
   return (
@@ -16,7 +17,7 @@ const EventsSection = () => {
                 <CardHeader>
                   <CardTitle className='mb-4'>{event.title}</CardTitle>
                   <div className="flex items-center space-x-4 rounded-md border">
-                      <Image src={event.photo} width={432} height={400} className='rounded-md'/>
+                    <CarouselDemo photos={event.photo} />
                   </div>
                 </CardHeader>
                 <CardContent>

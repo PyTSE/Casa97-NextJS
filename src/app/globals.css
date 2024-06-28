@@ -297,4 +297,41 @@
 .fade-out {
   opacity: 0;
 }
+
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.carousel-arrow.left-2 {
+  left: 10px;
+}
+
+.carousel-arrow.right-2 {
+  right: 10px;
+}
+
+/* Media query para telas pequenas */
+@media (max-width: 640px) {
+  .carousel-arrow.left-2,
+  .carousel-arrow.right-2 {
+    top: auto;
+    bottom: 10px;
+    transform: none;
+  }
+
+  .carousel-arrow.left-2 {
+    left: 50%;
+    transform: translateX(-100%);
+  }
+
+  .carousel-arrow.right-2 {
+    left: 50%;
+    transform: translateX(0%);
+  }
+}
+
+
 }

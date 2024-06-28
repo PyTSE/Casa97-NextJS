@@ -1,6 +1,5 @@
-"use client"
-
-import * as React from "react"
+"use client";
+import * as React from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -8,21 +7,19 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+} from "@tanstack/react-table";
+import { format } from "date-fns";
+import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -30,90 +27,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, onValue, get } from "firebase/database";
+import { firebaseConfig } from "@/constants";
 
-const data = [
-  {
-    id: "4",
-    name: "Diana",
-    whatsapp: "111222333",
-    reservationDate: "15/10/2022",
-    table: "Mesa 4",
-    location: "Lareira",
-  },
-  {
-    id: "5",
-    name: "Eduardo",
-    whatsapp: "444555666",
-    reservationDate: "20/10/2022",
-    table: "Mesa 5",
-    location: "Varanda",
-  },
-  {
-    id: "6",
-    name: "Fernanda",
-    whatsapp: "777888999",
-    reservationDate: "18/10/2022",
-    table: "Mesa 6",
-    location: "Guarda Chuva",
-  },
-  {
-    id: "7",
-    name: "Gustavo",
-    whatsapp: "123456789",
-    reservationDate: "25/10/2022",
-    table: "Mesa 7",
-    location: "Lareira",
-  },
-  {
-    id: "8",
-    name: "Helena",
-    whatsapp: "987654321",
-    reservationDate: "30/10/2022",
-    table: "Mesa 8",
-    location: "Varanda",
-  },
-  {
-    id: "9",
-    name: "Isabela",
-    whatsapp: "555666777",
-    reservationDate: "28/10/2022",
-    table: "Mesa 9",
-    location: "Guarda Chuva",
-  },
-  {
-    id: "10",
-    name: "João",
-    whatsapp: "111333555",
-    reservationDate: "05/11/2022",
-    table: "Mesa 10",
-    location: "Lareira",
-  },
-  {
-    id: "11",
-    name: "Kátia",
-    whatsapp: "777999111",
-    reservationDate: "10/11/2022",
-    table: "Mesa 11",
-    location: "Varanda",
-  },
-  {
-    id: "12",
-    name: "Lucas",
-    whatsapp: "222444666",
-    reservationDate: "08/11/2022",
-    table: "Mesa 12",
-    location: "Guarda Chuva",
-  },
-  {
-    id: "13",
-    name: "Mariana",
-    whatsapp: "888999000",
-    reservationDate: "15/11/2022",
-    table: "Mesa 13",
-    location: "Lareira",
-  },
-]
+const firebaseApp = initializeApp(firebaseConfig);
+const database = getDatabase(firebaseApp);
 
 export const columns = [
   {
@@ -129,7 +49,9 @@ export const columns = [
   {
     accessorKey: "reservationDate",
     header: "Data da Reserva",
-    cell: ({ row }) => <div>{row.getValue("reservationDate")}</div>,
+    cell: ({ row }) => (
+      <div>{format(new Date(row.getValue("reservationDate")), "dd/MM/yyyy")}</div>
+    )
   },
   {
     accessorKey: "table",
@@ -145,7 +67,16 @@ export const columns = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const reservation = row.original
+      const reservation = row.original;
+      const handleCancelReservation = () => {
+        console.log("Cancelar reserva:", reservation.id);
+        // Implementar a lógica para cancelar a reserva aqui
+      };
+      const handleEditReservation = () => {
+        console.log("Editar reserva:", reservation.id);
+        // Implementar a lógica para editar a reserva aqui
+      };
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -156,28 +87,69 @@ export const columns = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => handleCancelReservation(reservation.id)}>
+            <DropdownMenuItem onClick={handleCancelReservation}>
               Cancelar Reserva
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEditReservation(reservation.id)}>
+            <DropdownMenuItem onClick={handleEditReservation}>
               Alterar Reserva
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
-]
+];
 
 export default function TabelaDeReservas() {
-  const [sorting, setSorting] = React.useState([])
-  const [columnFilters, setColumnFilters] = React.useState([])
-  const [columnVisibility, setColumnVisibility] = React.useState({})
-  const [rowSelection, setRowSelection] = React.useState({})
+  const [sorting, setSorting] = React.useState([]);
+  const [columnFilters, setColumnFilters] = React.useState([]);
+  const [columnVisibility, setColumnVisibility] = React.useState({});
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [reservas, setReservasData] = React.useState([]);
+
+  React.useEffect(() => {
+    const dbRef = ref(database, "reservas");
+    const unsubscribe = onValue(dbRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const reservasPromises = Object.keys(data).map(async (key) => {
+          const reserva = data[key];
+          // Aqui você pode buscar o nome da mesa e do local usando os IDs
+          const mesaRef = ref(database, `spaces/${reserva.localId}/mesas/${reserva.mesaId}`);
+          const localRef = ref(database, `spaces/${reserva.localId}`);
+
+          const [mesaSnapshot, localSnapshot] = await Promise.all([
+            get(mesaRef),
+            get(localRef),
+          ]);
+
+          const mesaNome = mesaSnapshot.val().numero;
+          const localNome = localSnapshot.val().name;
+
+          return {
+            id: key,
+            name: reserva.nome,
+            whatsapp: reserva.whatsapp,
+            reservationDate: reserva.dataReserva,
+            table: mesaNome,
+            location: localNome,
+          };
+        });
+
+        Promise.all(reservasPromises).then((reservasComNomes) => {
+          setReservasData(reservasComNomes);
+        });
+      } else {
+        setReservasData([]);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const table = useReactTable({
-    data,
     columns,
+    data: reservas,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -192,17 +164,7 @@ export default function TabelaDeReservas() {
       columnVisibility,
       rowSelection,
     },
-  })
-
-  const handleCancelReservation = (reservationId) => {
-    // Implementação da função de cancelar reserva
-    console.log("Cancelar reserva:", reservationId)
-  }
-
-  const handleEditReservation = (reservationId) => {
-    // Implementação da função de alterar reserva
-    console.log("Alterar reserva:", reservationId)
-  }
+  });
 
   const handleFilterChange = (value) => {
     const newFilters = columns.map((column) => ({
@@ -235,7 +197,9 @@ export default function TabelaDeReservas() {
                   key={column.id}
                   className="capitalize"
                   checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  onCheckedChange={(value) =>
+                    column.toggleVisibility(!!value)
+                  }
                 >
                   {column.id}
                 </DropdownMenuCheckboxItem>
@@ -270,14 +234,20 @@ export default function TabelaDeReservas() {
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   Sem resultados.
                 </TableCell>
               </TableRow>
@@ -290,25 +260,7 @@ export default function TabelaDeReservas() {
           {table.getFilteredSelectedRowModel().rows.length} de{" "}
           {table.getFilteredRowModel().rows.length} linha(s) selecionada(s).
         </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Próxima
-          </Button>
-        </div>
       </div>
     </div>
-  )
+  );
 }

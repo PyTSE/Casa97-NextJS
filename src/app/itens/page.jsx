@@ -36,12 +36,13 @@ import {
 import { useReactTable, flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, getFilteredRowModel } from "@tanstack/react-table";
 import { firebaseConfig } from "@/constants";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import Image from "next/image";
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
 const storage = getStorage(firebaseApp);
 
-export default function SpacesTable() {
+export default function ItemsTable() {
   const [sorting, setSorting] = React.useState([]);
   const [columnFilters, setColumnFilters] = React.useState([]);
   const [columnVisibility, setColumnVisibility] = React.useState({});
@@ -49,10 +50,11 @@ export default function SpacesTable() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [selectedSpaceId, setSelectedSpaceId] = React.useState(null);
   const [numTables, setNumTables] = React.useState(0);
-  const [spacesData, setSpacesData] = React.useState([]);
+  const [itemsData, setItemsData] = React.useState([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
-  const [selectedSpace, setSelectedSpace] = React.useState(null);
+  const [selectedItem, setSelectedItem] = React.useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [photoPreview, setPhotoPreview] = React.useState(null);
 
   const spacesColumns = [
     {
@@ -62,14 +64,21 @@ export default function SpacesTable() {
     },
     {
       accessorKey: "name",
-      header: "Nome do Local",
+      header: "Nome do item",
       cell: ({ row }) => <div>{row.getValue("name")}</div>,
+    },
+    {
+      accessorKey: "itemValue",
+      header: "Valor do item",
+      cell: ({ row }) => (
+        <div>{row.getValue("itemValue").toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+      ),
     },
     {
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
-        const space = row.original;
+        const item = row.original;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -80,11 +89,11 @@ export default function SpacesTable() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Ações</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleEditReservation(space)}>
+              <DropdownMenuItem onClick={() => handleEditReservation(item)}>
                 Editar Local
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                setSelectedSpaceId(space.id);
+                setSelectedSpaceId(item.id);
                 setIsDeleteDialogOpen(true);
               }}>
                 Excluir Local
@@ -96,58 +105,71 @@ export default function SpacesTable() {
     },
   ];
 
-  const handleDeleteSpace = (spaceId) => {
-    remove(ref(database, `spaces/${spaceId}`))
+  const handlePhotoChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPhotoPreview(null);
+    }
+  };
+  const handleDeleteSpace = (itemId) => {
+    remove(ref(database, `items/${itemId}`))
       .then(() => {
-        console.log("Local excluído com sucesso:", spaceId);
-        setSpacesData((prevData) => prevData.filter((space) => space.id !== spaceId));
+        console.log("Local excluído com sucesso:", itemId);
+        setItemsData((prevData) => prevData.filter((item) => item.id !== itemId));
       })
       .catch((error) => {
         console.error("Erro ao excluir o local:", error);
       });
   };
 
-  const handleAddSpace = async (spaceName, photoFile, setSpacesData) => {
+  const handleAddSpace = async (itemName, itemValue, photoFile) => {
     try {
-      const newSpaceRef = await push(ref(database, "spaces"), { name: spaceName });
-      console.log("Novo espaço adicionado com sucesso:", spaceName);
-      
-      const spaceId = newSpaceRef.key;
-      await handleAddPhoto(spaceId, photoFile);
-
-      const downloadURL = await getDownloadURL(storageRef(storage, `spaces/${spaceId}/photo.jpg`));
-      await update(ref(database, `spaces/${spaceId}`), { photo: downloadURL });
-
-      setSpacesData((prevData) => [...prevData, { id: spaceId, name: spaceName, photo: downloadURL }]);
+      const numericItemValue = parseFloat(itemValue);
+      const newSpaceRef = await push(ref(database, "items"), { name: itemName, itemValue: numericItemValue });
+      console.log("Novo item adicionado com sucesso:", itemName);
+  
+      const itemId = newSpaceRef.key;
+      await handleAddPhoto(itemId, photoFile);
+  
+      const downloadURL = await getDownloadURL(storageRef(storage, `items/${itemId}/photo.jpg`));
+      await update(ref(database, `items/${itemId}`), { photo: downloadURL });
     } catch (error) {
-      console.error("Erro ao adicionar novo espaço:", error);
+      console.error("Erro ao adicionar novo item:", error);
     }
   };
+  
 
-  const handleAddPhoto = async (spaceId, photoFile) => {
+  const handleAddPhoto = async (itemId, photoFile) => {
     try {
-      const storageReference = storageRef(storage, `spaces/${spaceId}/photo.jpg`);
+      const storageReference = storageRef(storage, `items/${itemId}/photo.jpg`);
       await uploadBytes(storageReference, photoFile);
-      console.log("Foto adicionada com sucesso:", spaceId);
+      console.log("Foto adicionada com sucesso:", itemId);
     } catch (error) {
       console.error("Erro ao adicionar foto:", error);
     }
   };
 
-  const handleEditReservation = (space) => {
-    setSelectedSpace(space);
+  const handleEditReservation = (item) => {
+    setSelectedItem(item);
     setIsEditDialogOpen(true);
   };
 
   React.useEffect(() => {
-    const dbRef = ref(database, "spaces");
+    const dbRef = ref(database, "items");
     const unsubscribe = onValue(dbRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const spaces = Object.keys(data).map((key) => ({ id: key, ...data[key] }));
-        setSpacesData(spaces);
+        const items = Object.keys(data).map((key) => ({ id: key, ...data[key] }));
+        setItemsData(items);
+        console.log(items);
       } else {
-        setSpacesData([]);
+        setItemsData([]);
       }
     });
 
@@ -155,7 +177,7 @@ export default function SpacesTable() {
   }, []);
 
   const table = useReactTable({
-    data: spacesData,
+    data: itemsData,
     columns: spacesColumns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -192,87 +214,88 @@ export default function SpacesTable() {
     setNumTables(0);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     const updatedSpaceName = document.getElementById("edit-name").value;
     const updatedPhotoFile = document.getElementById("edit-photo").files[0];
-
-    update(ref(database, `spaces/${selectedSpace.id}`), { name: updatedSpaceName })
-      .then(async () => {
-        if (updatedPhotoFile) {
-          await handleAddPhoto(selectedSpace.id, updatedPhotoFile);
-          const downloadURL = await getDownloadURL(storageRef(storage, `spaces/${selectedSpace.id}/photo.jpg`));
-          await update(ref(database, `spaces/${selectedSpace.id}`), { photo: downloadURL });
-          setSpacesData((prevData) =>
-            prevData.map((space) =>
-              space.id === selectedSpace.id
-                ? { ...space, name: updatedSpaceName, photo: downloadURL }
-                : space
-            )
-          );
-        } else {
-          setSpacesData((prevData) =>
-            prevData.map((space) =>
-              space.id === selectedSpace.id ? { ...space, name: updatedSpaceName } : space
-            )
-          );
-        }
-        setIsEditDialogOpen(false);
-      })
-      .catch((error) => {
-        console.error("Erro ao editar o espaço:", error);
-      });
+  
+    try {
+      await update(ref(database, `items/${selectedItem.id}`), { name: updatedSpaceName });
+      if (updatedPhotoFile) {
+        await handleAddPhoto(selectedItem.id, updatedPhotoFile);
+        const downloadURL = await getDownloadURL(storageRef(storage, `items/${selectedItem.id}/photo.jpg`));
+        await update(ref(database, `items/${selectedItem.id}`), { photo: downloadURL });
+      }
+      setItemsData((prevData) =>
+        prevData.map((item) =>
+          item.id === selectedItem.id ? { ...item, name: updatedSpaceName } : item
+        )
+      );
+  
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error("Erro ao editar o espaço:", error);
+    }
   };
+  
 
   return (
     <div className="w-full p-4">
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filtrar por todas as colunas..."
-          onChange={(event) => handleFilterChange(event.target.value)}
-          className="max-w-sm"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="ml-[10px]" onClick={() => setIsDialogOpen(true)}>Adicionar Local</Button>
-          </DropdownMenuTrigger>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-              <DialogTitle>Adicionar Local</DialogTitle>
-                <DialogDescription>
-                  Adicione um novo local na casa para reservas.
-                </DialogDescription>
-              </DialogHeader>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const spaceName = document.getElementById("name").value;
-                  const photoFile = document.getElementById("photo").files[0];
-                  handleAddSpace(spaceName, photoFile, setSpacesData);
-                  setIsDialogOpen(false);
-                }}
-              >
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">Nome</Label>
-                    <Input id="name" className="col-span-3" />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="photo" className="text-right">Foto</Label>
-                    <Input id="photo" type="file" className="col-span-3" />
-                  </div>
+ <div className="flex items-center py-4">
+      <Input
+        placeholder="Filtrar por todas as colunas..."
+        onChange={(event) => handleFilterChange(event.target.value)}
+        className="max-w-sm"
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button className="ml-[10px]" onClick={() => setIsDialogOpen(true)}>Adicionar Item</Button>
+        </DropdownMenuTrigger>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild />
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Adicionar Item</DialogTitle>
+              <DialogDescription>
+                Adicione um novo local na casa para reservas.
+              </DialogDescription>
+            </DialogHeader>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const itemName = document.getElementById("name").value;
+                const itemValue = document.getElementById("value").value;
+                const photoFile = document.getElementById("photo").files[0];
+                handleAddSpace(itemName, itemValue, photoFile, setItemsData);
+                setIsDialogOpen(false);
+              }}
+            >
+              <div className="flex flex-col gap-4 py-4">
+                <div className="items-center py-1">
+                  <Label htmlFor="name" className="text-right">Nome</Label>
+                  <Input id="name" className="col-span-3" />
                 </div>
-                <DialogFooter>
-                  <Button type="submit">Salvar alterações</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </DropdownMenu>
-      </div>
-
+                <div className="items-center">
+                  <Label htmlFor="value" className="text-right">Valor</Label>
+                  <Input id="value" type="number" min={0} className="col-span-3" />
+                </div>
+                <div className="items-center">
+                  <Label htmlFor="photo" className="text-right">Foto</Label>
+                  <Input id="photo" type="file" className="col-span-3 cursor-pointer" onChange={handlePhotoChange} />
+                  {photoPreview && (
+                    <div className="col-span-4 pt-4 flexCenter">
+                      <Image src={photoPreview} alt="Pré-visualização da Foto" width={200} height={200} className="rounded-md" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">Salvar alterações</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </DropdownMenu>
+    </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -313,13 +336,17 @@ export default function SpacesTable() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Editar Local</DialogTitle>
-            <DialogDescription>Edite as informações do local selecionado.</DialogDescription>
+            <DialogTitle>Editar item</DialogTitle>
+            <DialogDescription>Edite as informações do item selecionado.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-name" className="text-right">Nome</Label>
-              <Input id="edit-name" defaultValue={selectedSpace?.name} className="col-span-3" />
+              <Input id="edit-name" defaultValue={setSelectedItem?.name} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-value" className="text-right">Valor</Label>
+              <Input id="edit-value" defaultValue={setSelectedItem?.itemValue} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-photo" className="text-right">Foto</Label>
@@ -337,7 +364,7 @@ export default function SpacesTable() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza de que deseja excluir este local? Esta ação não pode ser desfeita.
+              Tem certeza de que deseja excluir este item? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
