@@ -28,8 +28,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, get } from "firebase/database";
+import { getDatabase, ref, onValue, get, remove } from "firebase/database";
 import { firebaseConfig } from "@/constants";
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -64,17 +65,35 @@ export const columns = [
     cell: ({ row }) => <div>{row.getValue("location")}</div>,
   },
   {
+    accessorKey: "items",
+    header: "Itens Adicionais",
+    cell: ({ row }) => <div>{row.getValue("items")}</div>,
+  },
+  {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
       const reservation = row.original;
+      const [dialogOpen, setDialogOpen] = React.useState(false); // Estado para controlar a abertura do diálogo
+      const [reservationToCancel, setReservationToCancel] = React.useState(null);
+
       const handleCancelReservation = () => {
-        console.log("Cancelar reserva:", reservation.id);
-        // Implementar a lógica para cancelar a reserva aqui
+        setReservationToCancel(reservation);
+        setDialogOpen(true); // Abre o diálogo de confirmação
       };
+
       const handleEditReservation = () => {
         console.log("Editar reserva:", reservation.id);
         // Implementar a lógica para editar a reserva aqui
+      };
+
+      const handleConfirmCancel = async () => {
+        if (reservationToCancel) {
+          const reservationRef = ref(database, `reservas/${reservationToCancel.id}`);
+          await remove(reservationRef);
+          setReservasData(reservas.filter(r => r.id !== reservationToCancel.id));
+          setDialogOpen(false); // Fecha o diálogo após a ação ser realizada
+        }
       };
 
       return (
@@ -87,10 +106,10 @@ export const columns = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem onClick={handleCancelReservation}>
+            <DropdownMenuItem onClick={handleCancelReservation} className="cursor-pointer">
               Cancelar Reserva
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleEditReservation}>
+            <DropdownMenuItem onClick={handleEditReservation} className="cursor-pointer">
               Alterar Reserva
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -106,6 +125,8 @@ export default function TabelaDeReservas() {
   const [columnVisibility, setColumnVisibility] = React.useState({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [reservas, setReservasData] = React.useState([]);
+  const [dialogOpen, setDialogOpen] = React.useState(false); // Estado para controlar a abertura do diálogo
+  const [reservationToCancel, setReservationToCancel] = React.useState(null); // Estado para armazenar a reserva a ser cancelada
 
   React.useEffect(() => {
     const dbRef = ref(database, "reservas");
@@ -114,7 +135,6 @@ export default function TabelaDeReservas() {
       if (data) {
         const reservasPromises = Object.keys(data).map(async (key) => {
           const reserva = data[key];
-          // Aqui você pode buscar o nome da mesa e do local usando os IDs
           const mesaRef = ref(database, `spaces/${reserva.localId}/mesas/${reserva.mesaId}`);
           const localRef = ref(database, `spaces/${reserva.localId}`);
 
@@ -132,7 +152,7 @@ export default function TabelaDeReservas() {
             whatsapp: reserva.whatsapp,
             reservationDate: reserva.dataReserva,
             table: mesaNome,
-            location: localNome,
+            location: localNome
           };
         });
 
@@ -172,6 +192,15 @@ export default function TabelaDeReservas() {
       value,
     }));
     setColumnFilters(newFilters);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (reservationToCancel) {
+      const reservationRef = ref(database, `reservas/${reservationToCancel.id}`);
+      await remove(reservationRef);
+      setReservasData(reservas.filter(r => r.id !== reservationToCancel.id));
+      setDialogOpen(false); // Fecha o diálogo após a ação ser realizada
+    }
   };
 
   return (
@@ -261,6 +290,22 @@ export default function TabelaDeReservas() {
           {table.getFilteredRowModel().rows.length} linha(s) selecionada(s).
         </div>
       </div>
+      <Dialog isOpen={dialogOpen} onClose={() => setDialogOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Cancelamento</DialogTitle>
+          </DialogHeader>
+          <p>Tem certeza de que deseja cancelar a reserva?</p>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmCancel}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
