@@ -1,4 +1,3 @@
-"use client";
 import { Montserrat } from "next/font/google";
 import "../globals.css";
 import Background from '../../../public/back.jpeg';
@@ -16,18 +15,18 @@ export const Metadata = {
 const RootLayout = ({ children }) => {
   return (
     <html lang="en">
-      <body className="flex justify-center items-center h-screen">
+      <body className="h-screen">
         <Toaster />
         <NextThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <div className={`${montserrat.className} relative flex justify-between h-full w-full`}>
+          <div className={`${montserrat.className}`}>
             <Image
               src={Background}
               layout="fill"
-              className="h-screen w-full object-cover opacity-30"
+              className="object-cover opacity-30"
               alt=""
             />
-            <div className="absolute inset-0 flex justify-center items-center p-4">
-              <main>{children}</main>
+            <div className="absolute inset-0 flex justify-center items-center p-4 overflow-auto">
+              <main className="flex-grow">{children}</main>
             </div>
           </div>
         </NextThemeProvider>
