@@ -37,6 +37,7 @@ import { useReactTable, flexRender, getCoreRowModel, getPaginationRowModel, getS
 import { firebaseConfig } from "@/constants";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Image from "next/image";
+import { NumericFormat } from "react-number-format";
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -48,7 +49,7 @@ export default function ItemsTable() {
   const [columnVisibility, setColumnVisibility] = React.useState({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [selectedSpaceId, setSelectedSpaceId] = React.useState(null);
+  const [selectedItemId, setSelectedItemId] = React.useState(null);
   const [numTables, setNumTables] = React.useState(0);
   const [itemsData, setItemsData] = React.useState([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
@@ -90,13 +91,13 @@ export default function ItemsTable() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Ações</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleEditReservation(item)}>
-                Editar Local
+                Editar Item
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                setSelectedSpaceId(item.id);
+                setSelectedItemId(item.id);
                 setIsDeleteDialogOpen(true);
               }}>
-                Excluir Local
+                Excluir Item
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -274,9 +275,17 @@ export default function ItemsTable() {
                   <Label htmlFor="name" className="text-right">Nome</Label>
                   <Input id="name" className="col-span-3" />
                 </div>
-                <div className="items-center">
+                <div className="flex flex-col items-start gap-2">
                   <Label htmlFor="value" className="text-right">Valor</Label>
-                  <Input id="value" type="number" min={0} className="col-span-3" />
+                  <NumericFormat
+                    id="item-value"
+                    thousandSeparator={true}
+                    prefix={'R$ '}
+                    decimalScale={2}
+                    fixedDecimalScale={true}
+                    placeholder="R$ 0,00"
+                    className="input border-2 w-full rounded-sm p-2"
+                  />
                 </div>
                 <div className="items-center">
                   <Label htmlFor="photo" className="text-right">Foto</Label>
@@ -289,7 +298,10 @@ export default function ItemsTable() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit">Salvar alterações</Button>
+                <Button type="submit">Adicionar</Button>
+                <DialogClose asChild>
+                <Button variant="ghost">Cancelar</Button>
+              </DialogClose>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -332,29 +344,38 @@ export default function ItemsTable() {
           </TableBody>
         </Table>
       </div>
-
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar item</DialogTitle>
-            <DialogDescription>Edite as informações do item selecionado.</DialogDescription>
+            <DialogTitle>Editar Item</DialogTitle>
+            <DialogDescription>Edite os detalhes do item.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-name" className="text-right">Nome</Label>
-              <Input id="edit-name" defaultValue={setSelectedItem?.name} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-value" className="text-right">Valor</Label>
-              <Input id="edit-value" defaultValue={setSelectedItem?.itemValue} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-photo" className="text-right">Foto</Label>
-              <Input id="edit-photo" type="file" className="col-span-3" />
-            </div>
+          <div className="flex flex-col gap-4 mb-4">
+            <Label htmlFor="edit-name">Nome do Item</Label>
+            <Input type="text" id="edit-name" defaultValue={selectedItem?.name} />
+            <div className="flex flex-col items-start gap-2">
+                  <Label htmlFor="value" className="text-right">Valor</Label>
+                  <NumericFormat
+                    id="item-value"
+                    thousandSeparator={true}
+                    prefix={'R$ '}
+                    decimalScale={2}
+                    fixedDecimalScale={true}
+                    placeholder="R$ 0,00"
+                    className="input border-2 w-full rounded-sm p-2"
+                  />
+                </div>
+            <Label htmlFor="edit-photo">Foto</Label>
+            <Input type="file" id="edit-photo" onChange={handlePhotoChange} />
+            {photoPreview && <Image src={photoPreview} alt="Pré-visualização da Foto" width={100} height={100} />}
           </div>
           <DialogFooter>
-            <Button onClick={handleSaveEdit}>Salvar alterações</Button>
+            <Button type="submit" onClick={handleSaveEdit}>
+              Salvar Alterações
+            </Button>
+            <DialogClose asChild>
+              <Button variant="ghost">Cancelar</Button>
+            </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
