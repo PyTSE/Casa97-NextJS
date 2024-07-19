@@ -6,19 +6,24 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { database, ref, push, remove, update } from "@/lib/firebase";
-import { onValue, set } from "firebase/database";
+import { database, ref, push, remove, update, get, set } from "@/lib/firebase";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog } from "@radix-ui/react-alert-dialog";
+import { AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { onValue } from "firebase/database";
 
 function LocaisAccordion() {
   const [locais, setLocais] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [newMesa, setNewMesa] = React.useState("");
-  const { toast, dispatch } = useToast(); // Adicione o dispatch aqui
+  const [selectedLocalId, setSelectedLocalId] = React.useState("");
+  const [selectedMesaId, setSelectedMesaId] = React.useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const { toast } = useToast();
 
   React.useEffect(() => {
     const locaisRef = ref(database, "spaces");
@@ -47,17 +52,18 @@ function LocaisAccordion() {
     return () => unsubscribe();
   }, []);
 
-  const handleAddMesa = (localId) => {
+  const handleAddMesa = async (localId) => {
     if (newMesa.trim() !== "") {
       const mesa = newMesa.trim();
       const localRef = ref(database, `spaces/${localId}/mesas`);
-
-      onValue(localRef, (snapshot) => {
+  
+      try {
+        const snapshot = await get(localRef);
         const mesasData = snapshot.val();
         const mesasExistentes = mesasData
           ? Object.values(mesasData).map((mesa) => mesa.numero)
           : [];
-
+  
         if (mesasExistentes.includes(mesa)) {
           toast({
             variant: "destructive",
@@ -71,10 +77,18 @@ function LocaisAccordion() {
             numero: mesa,
             reservado: "N",
             ativo: true,
+            ultimaReserva: null,
           });
           setNewMesa("");
         }
-      });
+      } catch (error) {
+        console.error("Erro ao adicionar mesa:", error);
+        toast({
+          title: "Erro!",
+          description: "Ocorreu um erro ao adicionar a mesa.",
+          status: "error",
+        });
+      }
     } else {
       toast({
         variant: "destructive",
@@ -85,17 +99,20 @@ function LocaisAccordion() {
     }
   };
 
-  const handleRemoveMesa = (localId, mesaId) => {
-    const localRef = ref(database, `spaces/${localId}/mesas/${mesaId}`);
-    remove(localRef);
-  };
+  const handleRemoveMesa = async (localId, mesaId) => {
+    const mesaRef = ref(database, `spaces/${localId}/mesas/${mesaId}`);
+    remove(mesaRef);
 
-  const handleToggleMesaStatus = (localId, mesaId, ativo) => {
+  }
+
+  const handleToggleMesaStatus = async (localId, mesaId, ativo) => {
     const mesaRef = ref(database, `spaces/${localId}/mesas/${mesaId}`);
     update(mesaRef, { ativo: !ativo });
-  };
-
+        
+  }
+  
   return (
+    <>
     <Accordion type="single" collapsible className="w-full p-8">
       {!loading &&
         locais.map((local) => (
@@ -119,51 +136,48 @@ function LocaisAccordion() {
                       min={1}
                       required
                     />
-                    <Button
-                      className="ml-2"
-                      onClick={() => handleAddMesa(local.id)}
-                    >
+                    <Button className="ml-2" onClick={() => handleAddMesa(local.id)}>
                       Adicionar Mesa
                     </Button>
                   </div>
                   <ul className="space-y-4">
-                    {local.mesas.map((mesa) => (
-                      <li
-                        key={mesa.id}
-                        className="flex items-center justify-between gap-4"
-                      >
-                        <div className="flexCenter">
-                          <span className="p-3 w-36">
-                            Mesa {mesa.numero}
-                          </span>
-                          <Badge
-                            variant={mesa.ativo ? "outline" : "destructive"}
-                          >
-                            {mesa.ativo ? "Ativo" : "Desativado"}
-                          </Badge>
-                        </div>
-                        <div className="flex gap-4">
-                          <Button
-                            onClick={() =>
-                              handleToggleMesaStatus(
-                                local.id,
-                                mesa.id,
-                                mesa.ativo
-                              )
-                            }
-                          >
-                            {mesa.ativo ? "Desativar" : "Ativar"}
-                          </Button>
-                          <Button
-                            onClick={() =>
-                              handleRemoveMesa(local.id, mesa.id)
-                            }
-                          >
-                            Excluir
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
+                    {local.mesas.map((mesa) => {
+                      const currentDate = new Date();
+                      const ultimaReservaDate = new Date(mesa.ultimaReserva);
+                      const canEditOrDelete =
+                        mesa.reservado !== "Y" || ultimaReservaDate >= currentDate;
+
+                      return (
+                        <li key={mesa.id} className="flex items-center justify-between gap-4">
+                          <div className="flexCenter">
+                            <span className="p-3 w-36">Mesa {mesa.numero}</span>
+                            <Badge variant={mesa.ativo ? "outline" : "destructive"}>
+                              {mesa.ativo ? "Ativo" : "Desativado"}
+                            </Badge>
+                          </div>
+                          <div className="flex gap-4">
+                            <Button
+                              onClick={() =>
+                                handleToggleMesaStatus(local.id, mesa.id, mesa.ativo)
+                              }
+                              disabled={!canEditOrDelete}
+                            >
+                              {mesa.ativo ? "Desativar" : "Ativar"}
+                            </Button>
+                            <Button
+                              onClick={ () => { 
+                                setIsDeleteDialogOpen(true)
+                                setSelectedLocalId(local.id)
+                                setSelectedMesaId(mesa.id)
+                              }}
+                              disabled={!canEditOrDelete}
+                            >
+                              Excluir
+                            </Button>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>
@@ -171,8 +185,29 @@ function LocaisAccordion() {
           </AccordionItem>
         ))}
     </Accordion>
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza de que deseja excluir esta mesa? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleRemoveMesa(selectedLocalId, selectedMesaId),
+                setIsDeleteDialogOpen(false);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
 export default LocaisAccordion;
-

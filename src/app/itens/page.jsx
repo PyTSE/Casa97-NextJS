@@ -131,11 +131,14 @@ export default function ItemsTable() {
 
   const handleAddSpace = async (itemName, itemValue, photoFile) => {
     try {
-      const numericItemValue = parseFloat(itemValue);
+      const cleanedItemValue = itemValue.replace(/[^\d.,]/g, '');
+      const numericItemValue = parseFloat(cleanedItemValue.replace(',', '.'));
+  
       const newSpaceRef = await push(ref(database, "items"), { name: itemName, itemValue: numericItemValue });
       console.log("Novo item adicionado com sucesso:", itemName);
   
       const itemId = newSpaceRef.key;
+  
       await handleAddPhoto(itemId, photoFile);
   
       const downloadURL = await getDownloadURL(storageRef(storage, `items/${itemId}/photo.jpg`));
@@ -144,6 +147,7 @@ export default function ItemsTable() {
       console.error("Erro ao adicionar novo item:", error);
     }
   };
+  
   
 
   const handleAddPhoto = async (itemId, photoFile) => {
@@ -264,7 +268,7 @@ export default function ItemsTable() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const itemName = document.getElementById("name").value;
-                const itemValue = document.getElementById("value").value;
+                const itemValue = document.getElementById("item-value").value;
                 const photoFile = document.getElementById("photo").files[0];
                 handleAddSpace(itemName, itemValue, photoFile, setItemsData);
                 setIsDialogOpen(false);
@@ -276,7 +280,7 @@ export default function ItemsTable() {
                   <Input id="name" className="col-span-3" />
                 </div>
                 <div className="flex flex-col items-start gap-2">
-                  <Label htmlFor="value" className="text-right">Valor</Label>
+                  <Label htmlFor="item-value" className="text-right">Valor</Label>
                   <NumericFormat
                     id="item-value"
                     thousandSeparator={true}

@@ -294,6 +294,11 @@
   opacity: 1;
 }
 
+.large-dialog {
+  max-width: 90vw; /* Ajuste conforme necessário */
+  width: 100%; /* Faz com que o modal ocupe a largura total */
+}
+
 .fade-out {
   opacity: 0;
 }

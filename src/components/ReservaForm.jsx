@@ -13,8 +13,11 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, push, set, onValue } from 'firebase/database';
 import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { firebaseConfig } from '@/constants';
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import ReactInputMask from 'react-input-mask';
+import InstagramCard from './InstagramCard';
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -42,7 +45,28 @@ const ReservaForm = () => {
   const [itensAdicionais, setItensAdicionais] = useState([]);
   const [cardClass, setCardClass] = useState('');
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isDialogFinalOpen, setIsDialogFinalOpen] = React.useState(false);
   const [selectedItensAdicionais, setSelectedItensAdicionais] = useState([]);
+  const [cardDescription, setCardDescription] = useState("Faça sua reserva agora para garantir um lugar em uma de nossas mesas exclusivas.");
+  const [cardTitle, setCardTitle] = useState("Reserve sua mesa na Casa97");
+  const [isAdding, setIsAdding] = useState(false);
+  
+  const formatDate = (date) => {
+    const d = new Date(date);
+    const month = `${d.getMonth() + 1}`.padStart(2, '0');
+    const day = `${d.getDate()}`.padStart(2, '0');
+    const year = d.getFullYear();
+    return [year, month, day].join('-');
+  };
+
+  // Data de hoje
+  const today = new Date();
+  const minDate = formatDate(today);
+
+  // Data de 7 dias à frente
+  const futureDate = new Date();
+  futureDate.setDate(today.getDate() + 7);
+  const maxDate = formatDate(futureDate);
 
   useEffect(() => {
     const locaisRef = ref(database, "spaces");
@@ -93,31 +117,43 @@ const ReservaForm = () => {
       setShowDropdowns(true);
       setshowInitialForm(false);
       setCardClass(cardClass === '' ? 'h-[900px]' : '');
+      setCardDescription("");
+      setCardTitle("Selecione o Local");
     }
     
   };
 
   const handleAdicionarItem = (item) => {
+
     setCarrinhoOpen(true);
-    setItensCarrinho([...itensCarrinho, item]);
+    setItensCarrinho((prevItensCarrinho) => [...prevItensCarrinho, item])
+    toast({
+      icon: <ShoppingCart/>,
+      title: "Item adicionado ao carrinho!",
+      description: `${item.nome} adicionado ao carrinho com sucesso.`,
+    });
   };
 
   const handleRemoverItem = (index) => {
     const novoCarrinho = [...itensCarrinho];
     novoCarrinho.splice(index, 1);
     setItensCarrinho(novoCarrinho);
+    
   };
 
   const handleCancelDropdowns = () => {
       setFormError(false);
       setShowDropdowns(false);
       setshowInitialForm(true);
+      setCardDescription("Faça sua reserva agora para garantir um lugar em uma de nossas mesas exclusivas.");
+      setCardTitle("Reserve sua mesa na Casa97");
   };
 
   const handleShowItensAdicionais = () => {
     if (mesaId && localId) {
       setShowItensAdicionais(true);
       setShowDropdowns(false);
+      setCardTitle("Selecione Itens Adicionais");
     } else {
       setFormError(true);
     }
@@ -179,27 +215,38 @@ const ReservaForm = () => {
       dataReserva,
       mesaId,
       localId,
-      itensAdicionais: selectedItensAdicionais,
+      pago: itensCarrinho.length > 1 ? "N" : "Y",
+      finalizado: "N",
+      itensAdicionais: itensCarrinho.map(item => item.id), // Filtrando apenas os IDs dos itens adicionais no submit
       timestamp: new Date().toISOString()
     };
+    setIsDialogFinalOpen(true);
 
     set(reservaRef, reservaData)
       .then(() => {
         const mesaRef = ref(database, `spaces/${localId}/mesas/${mesaId}`);
-        set(mesaRef, { ...mesas.find(mesa => mesa.id === mesaId), reservado: 'Y' });
+        set(mesaRef, { ...mesas.find(mesa => mesa.id === mesaId), reservado: 'Y', ultimaReserva: dataReserva});
 
         setNome('');
         setWhatsapp('');
         setData('');
         setMesaId('');
         setLocalId('');
+        setNumeroPessoas('');
+        setItensCarrinho([]);
         setShowDropdowns(false);
         setShowItensAdicionais(false);
+        setshowInitialForm(true);
+        const formattedDate = new Intl.DateTimeFormat('pt-BR', {
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+        }).format(new Date(dataReserva));
 
         toast({
           icon: <CalendarCheck />,
           title: "Reserva realizada!",
-          description: `Reserva para ${nome} na data ${dataReserva} realizada com sucesso.`,
+          description: `Reserva para ${nome} na data ${formattedDate} realizada com sucesso.`,
         });
       })
       .catch((error) => {
@@ -211,6 +258,7 @@ const ReservaForm = () => {
         });
       });
   };
+  
 
   const handleItemChange = (itemId) => {
     setSelectedItensAdicionais((prevSelected) =>
@@ -226,7 +274,7 @@ const ReservaForm = () => {
 
   return (
     <div className='flex justify-center items-center relative h-full'>
-      <Card className={`w-full ${cardClass} max-h-full overflow-y-auto`}>
+      <Card className={`w-full max-h-full overflow-y-auto`}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="absolute bottom-4 right-4">
@@ -245,12 +293,12 @@ const ReservaForm = () => {
           </DropdownMenuContent>
         </DropdownMenu>
         <CardHeader>
-          <div style={logoStyle} className='mb-2'>
+          <div style={logoStyle} className='flexBetween items-center'>
+            <CardTitle>{cardTitle}</CardTitle>
             <Image src={Logo} className='h-[42px] w-[42px]' alt="" />
           </div>
-          <CardTitle>Reserve sua mesa na Casa97</CardTitle>
           <CardDescription>
-            Faça sua reserva agora para garantir um lugar em uma de nossas mesas exclusivas.
+            {cardDescription}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -258,7 +306,7 @@ const ReservaForm = () => {
             {showInitialForm && (
               <div className='flex flex-col gap-4'>
                 <div className="flex flex-col space-y-2">
-                  <Label htmlFor="name">Nome</Label>
+                  <Label htmlFor="name">Nome Completo</Label>
                   <Input
                     id="name"
                     type="text"
@@ -269,13 +317,21 @@ const ReservaForm = () => {
                 </div>
                 <div className="flex flex-col space-y-2">
                   <Label htmlFor="whatsapp">Whatsapp</Label>
-                  <Input
-                    id="whatsapp"
-                    type="text"
+                  <ReactInputMask
+                    mask="(99) 99999-9999"
                     value={whatsapp}
                     onChange={(e) => setWhatsapp(e.target.value)}
-                    required
-                  />
+                  >
+                    {(inputProps) => (
+                      <Input
+                        {...inputProps}
+                        id="whatsapp"
+                        type="text"
+                        required
+                        placeholder="(XX) XXXXX-XXXX"
+                      />
+                    )}
+                  </ReactInputMask>
                 </div>
                 <div className="flex flex-col space-y-2">
                   <Label htmlFor="data">Data da Reserva</Label>
@@ -285,6 +341,8 @@ const ReservaForm = () => {
                     value={dataReserva}
                     onChange={(e) => setData(e.target.value)}
                     required
+                    min={minDate}
+                    max={maxDate}
                   />
                 </div>
                 <div className="flex flex-col space-y-2">
@@ -292,6 +350,8 @@ const ReservaForm = () => {
                   <Input
                     id="numero-pessoas"
                     type="number"
+                    min={1}
+                    max={25}
                     value={numeroPessoas}
                     onChange={(e) => setNumeroPessoas(e.target.value)}
                     required
@@ -308,7 +368,6 @@ const ReservaForm = () => {
               <>
                 <div className='flex flex-col lg:flex-row gap-4 justify-around my-4'>
                   <div className='flexCenter flex-col gap-4 lg:mr-10'>
-                    <Label htmlFor="local">Selecione o Local</Label>
                     <Select id="local" onValueChange={handleLocalMesaChange}>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecione um local" />
@@ -352,34 +411,35 @@ const ReservaForm = () => {
               </div>
               <div className='flex gap-4'>
                 <Button type="button" onClick={handleShowItensAdicionais}>Próximo</Button>
-                <Button type="button" onClick={handleCancelDropdowns}>Cancelar</Button>
+                <Button type="button" onClick={handleCancelDropdowns}>Voltar</Button>
               </div>
               </>
 
             )}
             {showItensAdicionais && (
               <div>
-                <Label htmlFor="itensAdicionais">Selecione Itens Adicionais</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                   {itensAdicionais.map((item) => (
                     <Card key={item.id} id="itensAdicionais" onValueChange={handleItemChange} className='h-full'>
                       <CardHeader>
-                        <CardTitle className='mb-4'>Encanto (2 a 4 pessoas)</CardTitle>
+                        <CardTitle className='mb-4'>{item.name}</CardTitle>
                         <div className="flex items-center space-x-4 rounded-md border lg:h-60">
                           <Image src={item.photo} alt={item.name} width={502} height={502} className="h-full w-full object-cover"/>
                         </div>
                       </CardHeader>
                       <CardContent>
                         <div className='mb-4'>
-                          <p>Inclui: Jogo americano na cor preto, sousplat branco, guardanapo de tecido preto, 2 velas, decorações com flores, trigos e mosquitinhos desidratados.</p>
+                          <p>{item.description}</p>
+                          <p>{`${item.itemValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}</p>
                         </div>
                         <div className='flex flexCenter'>
-                          <Button
-                            type="button"
-                            className=""
-                            onClick={() => handleAdicionarItem({ nome: item.name, preco: item.itemValue })}
-                          >
-                          Adicionar Item
+                        <Button
+                          type="button"
+                          onClick={() => handleAdicionarItem({ id: item.id, nome: item.name, preco: item.itemValue })}
+                          className={`transition-transform transform ${isAdding ? 'scale-95' : ''}`}
+                          disabled={isAdding}
+                        >
+                            {isAdding ? 'Adicionando...' : 'Adicionar Item'}
                           </Button>
                         </div>
                       </CardContent>
@@ -393,16 +453,19 @@ const ReservaForm = () => {
               </div>
             )}
             {carrinhoOpen && (
+              <>
               <Button 
                 variant="outline" 
                 size="icon" 
                 type='button'
-                className="absolute bottom-16 right-4"
+                className="absolute bottom-16 right-4 w-100 bg-blue-100"
                 onClick={() => { setIsDialogOpen(true) }}
               >
-                <ShoppingCart className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"/>
+                <p>Carrinho</p>
+                <ShoppingCart className="h-[1.2rem] w-[1.9rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"/>
                 <span className="sr-only">Toggle theme</span>
               </Button>
+              </>
             )}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild />
@@ -413,15 +476,15 @@ const ReservaForm = () => {
                     Abaixo são os itens que voce adicionou.
                   </DialogDescription>
                 </DialogHeader>
-                {itensCarrinho.map((item, index) => (
-                  <div className="flex items-center justify-between my-2 bold-16" key={index}>
+                {itensCarrinho.map((item) => (
+                  <div className="flex items-center justify-between my-2 bold-16" key={item.id}>
                     <div className="flex-1">
                       <p className="text-md">{item.nome}</p>
                     </div>
                     <div className="mr-12">
                       <p className="text-md">R${item.preco}</p>
                     </div>
-                    <Button onClick={() => handleRemoverItem(index)}>Remover</Button>
+                    <Button onClick={() => handleRemoverItem(item.id)}>Remover</Button>
                   </div>
                 ))}
                 <div className='flexBetween bold-18 border-2 rounded-sm p-4 text-lg'>
@@ -430,6 +493,18 @@ const ReservaForm = () => {
                     R${' '}
                     {itensCarrinho.reduce((acc, item) => acc + item.preco * 1, 0).toFixed(2)}
                   </p>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={isDialogFinalOpen} onOpenChange={setIsDialogFinalOpen}>
+              <DialogTrigger asChild />
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Reserva Confirmada!</DialogTitle>
+                </DialogHeader>
+                <p className='text-lg'>Em breve voce receberá uma confirmação via WhatsApp.</p>
+                <div className='flexBetween flex-col gap-4 text-sx items-start'>
+                  <InstagramCard></InstagramCard>
                 </div>
               </DialogContent>
             </Dialog>

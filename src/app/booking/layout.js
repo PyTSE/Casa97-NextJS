@@ -25,7 +25,7 @@ const RootLayout = ({ children }) => {
               className="object-cover opacity-30"
               alt=""
             />
-            <div className="absolute inset-0 flex justify-center items-center p-4 overflow-auto">
+            <div className="absolute inset-0 justify-center items-center p-4 overflow-auto">
               <main className="flex-grow">{children}</main>
             </div>
           </div>
