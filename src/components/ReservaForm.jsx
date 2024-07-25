@@ -1,29 +1,34 @@
+"use client";
+require('dotenv').config();
 import React, { useState, useEffect } from 'react';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { CalendarCheck, Moon, Sun, ShoppingCart } from "lucide-react";
+import { CalendarCheck, Moon, Sun, ShoppingCart, Circle } from "lucide-react";
 import { useTheme } from "next-themes";
 import Image from 'next/image';
 import Logo from '../../public/casa97.png';
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from './ui/select';
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, push, set, onValue } from 'firebase/database';
+import { getDatabase, ref, push, set, onValue, get } from 'firebase/database';
 import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { firebaseConfig } from '@/constants';
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import ReactInputMask from 'react-input-mask';
-import InstagramCard from './InstagramCard';
+import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from 'react-datepicker';
+import { ptBR } from 'date-fns/locale';
+import { createMessage, sendMessage } from '@/lib/utils';
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
 const storage = getStorage(firebaseApp);
 
-const ReservaForm = () => {
+const ReservaForm = (props) => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [nome, setNome] = useState('');
@@ -31,6 +36,7 @@ const ReservaForm = () => {
   const [dataReserva, setData] = useState('');
   const [mesaId, setMesaId] = useState('');
   const [localId, setLocalId] = useState('');
+  const [showModalPessoas, setShowModalPessoas] = useState(false);
   const [numeroPessoas, setNumeroPessoas] = useState('');
   const [showDropdowns, setShowDropdowns] = useState(false);
   const [showInitialForm, setshowInitialForm] = useState(true);
@@ -38,6 +44,7 @@ const ReservaForm = () => {
   const [itensCarrinho, setItensCarrinho] = useState([]);
   const [carrinhoOpen, setCarrinhoOpen] = useState(false);
   const [mesas, setMesas] = useState([]);
+  const [cardHScreen, setCardHScreen] = useState('h-screen');
   const [reservas, setReservas] = useState([]);
   const [formError, setFormError] = useState(false);
   const [fotoLocal, setFotoLocal] = useState(null);
@@ -50,6 +57,12 @@ const ReservaForm = () => {
   const [cardDescription, setCardDescription] = useState("Faça sua reserva agora para garantir um lugar em uma de nossas mesas exclusivas.");
   const [cardTitle, setCardTitle] = useState("Reserve sua mesa na Casa97");
   const [isAdding, setIsAdding] = useState(false);
+  const [desativacaoIntervals, setDesativacaoIntervals] = useState([]);
+  const [excludedDates, setExcludedDates] = useState([]);
+  const [userClass, setUserClass] = useState('');
+  const [localNome, setLocalNome] = useState('');
+  const [mesaNome, setMesaNome] = useState(''); 
+  
   
   const formatDate = (date) => {
     const d = new Date(date);
@@ -59,16 +72,57 @@ const ReservaForm = () => {
     return [year, month, day].join('-');
   };
 
-  // Data de hoje
+  const fetchDesativacaoIntervals = async () => {
+    const intervalsRef = ref(database, "intervalosDesativacao");
+    const snapshot = await get(intervalsRef);
+    const data = snapshot.val();
+    return data ? Object.values(data) : [];
+  };
+
+  const generateExcludedDates = (intervals) => {
+    let excludedDates = [];
+
+    intervals.forEach(interval => {
+      let startDate = new Date(interval.dataInicio);
+      let endDate = new Date(interval.dataFim);
+      let currentDate = new Date(startDate);
+
+      while (currentDate <= endDate) {
+        excludedDates.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    });
+
+    return excludedDates;
+  };
+
+  useEffect(() => {
+    const fetchIntervals = async () => {
+      const intervals = await fetchDesativacaoIntervals();
+      setDesativacaoIntervals(intervals);
+    };
+
+    fetchIntervals();
+  }, []);
+
+  useEffect(() => {
+    if (desativacaoIntervals.length > 0) {
+      const dates = generateExcludedDates(desativacaoIntervals);
+      setExcludedDates(dates);
+    }
+  }, [desativacaoIntervals]);
+
   const today = new Date();
   const minDate = formatDate(today);
 
-  // Data de 7 dias à frente
   const futureDate = new Date();
   futureDate.setDate(today.getDate() + 7);
   const maxDate = formatDate(futureDate);
 
   useEffect(() => {
+    if(props.type === 'user'){
+      setUserClass('md:w-1/2');
+    }
     const locaisRef = ref(database, "spaces");
     const unsubscribe = onValue(locaisRef, (snapshot) => {
       const data = snapshot.val();
@@ -110,8 +164,26 @@ const ReservaForm = () => {
   }, []);
 
   const handleShowDropdowns = () => {
+
+    if(numeroPessoas > 4){
+      setShowModalPessoas(true);
+      toast({
+        title: "Número de pessoas excedido!",
+        description: "Por favor, insira um número menor de pessoas ou continue o atendimento via WhatsApp",
+        status: "error",
+      });
+      return;
+    }
+
     if (!nome || !whatsapp || !dataReserva || !numeroPessoas) {
       setFormError(true);
+    } else if (!validarWhatsapp(whatsapp)) {
+      setFormError(true);
+      toast({
+        title: "Erro no formulário",
+        description: "Por favor, insira um número de WhatsApp válido no formato (XX) XXXXX-XXXX.",
+        status: "error",
+      });
     } else {
       setFormError(false);
       setShowDropdowns(true);
@@ -121,6 +193,14 @@ const ReservaForm = () => {
       setCardTitle("Selecione o Local");
     }
     
+  };
+
+  const handleContact = () => {
+    const phoneNumber = '554732279537';
+    const message = `Olá, gostaria de uma mesa para ${numeroPessoas} pessoas`;
+    const encodedMessage = encodeURIComponent(message);
+    const url = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    window.open(url, '_blank');
   };
 
   const handleAdicionarItem = (item) => {
@@ -145,6 +225,7 @@ const ReservaForm = () => {
       setFormError(false);
       setShowDropdowns(false);
       setshowInitialForm(true);
+      setCardHScreen('h-screen');
       setCardDescription("Faça sua reserva agora para garantir um lugar em uma de nossas mesas exclusivas.");
       setCardTitle("Reserve sua mesa na Casa97");
   };
@@ -161,11 +242,13 @@ const ReservaForm = () => {
 
   const handleLocalMesaChange = async (value) => {
     const selectedLocal = locais.find(local => local.id === value);
+    setLocalNome(selectedLocal ? selectedLocal.name : '');
     if (selectedLocal) {
       const sortedMesas = (selectedLocal.mesas || []).sort((a, b) => a.numero - b.numero);
       setMesas(sortedMesas);
       setLocalId(selectedLocal.id);
       setMesaId('');
+      setCardHScreen('');
       if (selectedLocal.photo) {
         try {
           const photoRef = storageRef(storage, selectedLocal.photo);
@@ -199,7 +282,19 @@ const ReservaForm = () => {
     }
   }, [dataReserva, localId]);
 
-  const handleSubmit = (e) => {
+  const validarWhatsapp = (numero) => {
+    const numeroLimpo = numero.replace(/\D/g, '');
+    
+    const regex = /^\d{2}\d{5}\d{4}$/;
+    return regex.test(numeroLimpo);
+  };
+
+  const handleMesaSelect = (mesa) => {
+    setMesaId(mesa.id);
+    setMesaNome(mesa.numero);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!nome || !whatsapp || !dataReserva || !mesaId || !localId) {
@@ -215,13 +310,30 @@ const ReservaForm = () => {
       dataReserva,
       mesaId,
       localId,
-      pago: itensCarrinho.length > 1 ? "N" : "Y",
-      finalizado: "N",
+      pago: itensCarrinho.length > 0 ? "N" : "Y",
       itensAdicionais: itensCarrinho.map(item => item.id), // Filtrando apenas os IDs dos itens adicionais no submit
       timestamp: new Date().toISOString()
     };
     setIsDialogFinalOpen(true);
-
+    const formattedDate = new Intl.DateTimeFormat('pt-BR', {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    }).format(new Date(dataReserva));
+    console.log(mesaNome, localNome);
+    const payload = {
+      formattedDate,
+      nome,
+      whatsapp,
+      itensCarrinho: itensCarrinho.length > 0 ? itensCarrinho : 0,
+      mesaNome,
+      localNome,
+      numeroPessoas,
+      valorTotal: 30
+    
+    }
+    await sendMessage(payload);
+    
     set(reservaRef, reservaData)
       .then(() => {
         const mesaRef = ref(database, `spaces/${localId}/mesas/${mesaId}`);
@@ -237,11 +349,6 @@ const ReservaForm = () => {
         setShowDropdowns(false);
         setShowItensAdicionais(false);
         setshowInitialForm(true);
-        const formattedDate = new Intl.DateTimeFormat('pt-BR', {
-          year: 'numeric',
-          month: 'numeric',
-          day: 'numeric',
-        }).format(new Date(dataReserva));
 
         toast({
           icon: <CalendarCheck />,
@@ -271,13 +378,15 @@ const ReservaForm = () => {
   const logoStyle = {
     filter: theme === 'dark' ? 'brightness(0) invert(1)' : 'none'
   };
+  
+  const isMesaAtiva = (mesa) => mesa.ativo !== false;
 
   return (
-    <div className='flex justify-center items-center relative h-full'>
-      <Card className={`w-full max-h-full overflow-y-auto`}>
+    <>
+      <Card className={`w-full max-h-full overflow-y-auto ${userClass}`}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="absolute bottom-4 right-4">
+            <Button variant="outline" size="icon" className=" bottom-1 right-10">
               <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               <span className="sr-only">Toggle theme</span>
@@ -320,7 +429,11 @@ const ReservaForm = () => {
                   <ReactInputMask
                     mask="(99) 99999-9999"
                     value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
+                    onChange={(e) => {
+                      // Remover todos os caracteres não numéricos
+                      const apenasNumeros = e.target.value.replace(/\D/g, '');
+                      setWhatsapp(apenasNumeros);
+                    }}
                   >
                     {(inputProps) => (
                       <Input
@@ -333,17 +446,37 @@ const ReservaForm = () => {
                     )}
                   </ReactInputMask>
                 </div>
-                <div className="flex flex-col space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="data">Data da Reserva</Label>
-                  <Input
-                    id="data"
-                    type="date"
-                    value={dataReserva}
-                    onChange={(e) => setData(e.target.value)}
-                    required
-                    min={minDate}
-                    max={maxDate}
-                  />
+                  <div>
+                  {props.type === "user" && (
+                    <DatePicker
+                      id="data"
+                      className="border-2 rounded-sm text-center cursor-pointer"
+                      selected={dataReserva}
+                      onChange={(date) => setData(date)}
+                      required
+                      locale={ptBR}
+                      placeholderText="Selecione uma data"
+                      minDate={minDate}
+                      maxDate={maxDate}
+                      excludeDates={excludedDates}
+                      dateFormat="dd/MM/yyyy"
+                    />
+                  )}
+                  {props.type === "admin" && (
+                    <DatePicker
+                      id="data"
+                      className="border-2 rounded-sm text-center cursor-pointer"
+                      selected={dataReserva}
+                      onChange={(date) => setData(date)}
+                      required
+                      locale={ptBR}
+                      placeholderText="Selecione uma data"
+                      dateFormat="dd/MM/yyyy"
+                    />
+                  )}
+                  </div>
                 </div>
                 <div className="flex flex-col space-y-2">
                   <Label htmlFor="numero-pessoas">Número de Pessoas</Label>
@@ -394,16 +527,17 @@ const ReservaForm = () => {
                   {mesas.map((mesa) => (
                     <div key={mesa.id} className="w-full flex justify-center space-x-2 m-3">
                       <Button
-                        type="button"
-                        className={`w-full ${mesaId === mesa.id ? 'bg-blue-500' : 'bg-gray-500'}`}
-                        disabled={reservas.some(reserva => reserva.mesaId === mesa.id)}
-                        onClick={() => {
-                          setMesaId(mesa.id);
-                        }}
-                      >
-                        Mesa {mesa.numero} {reservas.some(reserva => {
-                          return reserva.mesaId === mesa.id;
-                        }) && "(Reservado)"}
+                          type="button"
+                          className={`w-full ${mesaId === mesa.id ? 'bg-blue-500 !important' : ''}`}
+                          variant='default'
+                          disabled={!isMesaAtiva(mesa) || reservas.some(reserva => reserva.mesaId === mesa.id)}
+                          onClick={() => {
+                            if (isMesaAtiva(mesa)) {
+                              handleMesaSelect(mesa);
+                            }
+                          }}
+                        >
+                          Mesa {mesa.numero} {reservas.some(reserva => reserva.mesaId === mesa.id) && "(Reservado)"} {!isMesaAtiva(mesa) && "(Desativada)"}
                       </Button>
                     </div>
                   ))}
@@ -504,15 +638,26 @@ const ReservaForm = () => {
                 </DialogHeader>
                 <p className='text-lg'>Em breve voce receberá uma confirmação via WhatsApp.</p>
                 <div className='flexBetween flex-col gap-4 text-sx items-start'>
-                  <InstagramCard></InstagramCard>
                 </div>
               </DialogContent>
             </Dialog>
             {formError && <p className="text-red-500">Preencha todos os campos obrigatórios.</p>}
-          </form>
+        </form>
         </CardContent>
       </Card>
-    </div>
+      <Dialog open={showModalPessoas} onOpenChange={setShowModalPessoas}>
+        <DialogTrigger asChild />
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Número de Pessoas Excedido</DialogTitle>
+          </DialogHeader>
+          <p className='text-lg'>Não temos mais mesas disponíveis para o número de pessoas selecionado, por favor entre em contato conosco via WhatsApp para que possamos auxilia-lo.</p>
+          <div className='flexBetween flex-col gap-4 text-sx items-start'>
+            <Button onClick={handleContact}>Entrar em contato</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

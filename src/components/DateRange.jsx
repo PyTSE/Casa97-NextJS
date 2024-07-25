@@ -6,6 +6,7 @@ import { getDatabase, ref, set, onValue, remove } from '@firebase/database';
 import { initializeApp } from '@firebase/app';
 import { firebaseConfig } from '@/constants';
 import { format } from 'date-fns';
+import { toast } from './ui/use-toast';
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
 
@@ -55,14 +56,22 @@ const DateRange = () => {
 
     try {
       await desativarReservas(dataInicio, dataFim);
-      alert('Reservas desativadas com sucesso!');
+      toast({
+        title: "Reservas desativadas com sucesso!",
+        description: "",
+        status: "error",
+      });
       setDataInicio('');
       setDataFim('');
       setFormError('');
       fetchIntervalos(); // Atualiza a lista de intervalos
     } catch (error) {
       console.error('Erro ao desativar reservas:', error);
-      alert('Ocorreu um erro ao desativar as reservas. Tente novamente mais tarde.');
+      toast({
+        title: "Erro ao tentar desativar reservas.",
+        description: "Ocorreu um erro ao desativar as reservas. Tente novamente mais tarde.",
+        status: "error",
+      });
     }
   };
 

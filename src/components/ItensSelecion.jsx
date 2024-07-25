@@ -15,23 +15,44 @@ const ItensSelection = ({ handleItemChange, handleAdicionarItem, isAdding, setSh
   const database = getDatabase(firebaseApp);
 
   useEffect(() => {
-    const itensRef = ref(database, "items");
-    const unsubscribe = onValue(itensRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const itensData = Object.keys(data).map((key) => ({
-          id: key,
-          ...data[key],
-        }));
-        console.log(itensData);
-        setItensAdicionais(itensData);
-      } else {
-        setItensAdicionais([]);
-      }
-    });
+    const fetchData = async () => {
+      try {
+        const itensRef = ref(database, 'items');
+        const reservaRef = ref(database, `reservas/${reservationToEdit.id}/itensAdicionais`);
+        
+        // Consultar todos os itens adicionais
+        const itensUnsubscribe = onValue(itensRef, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            const itensData = Object.keys(data).map((key) => ({
+              id: key,
+              ...data[key],
+            }));
+            console.log('Itens Adicionais:', itensData);
+            setItensAdicionais(itensData);
+          } else {
+            setItensAdicionais([]);
+          }
+        });
+        
+        // Consultar itens do carrinho para a reserva específica
+        const reservaUnsubscribe = onValue(reservaRef, (snapshot) => {
+          const reservaItens = snapshot.val() || {};
+          console.log('Itens do Carrinho:', reservaItens);
+          setCart(reservaItens);
+        });
 
-    return () => unsubscribe();
-  }, []);
+        return () => {
+          itensUnsubscribe(); // Limpar a assinatura da consulta de itens adicionais
+          reservaUnsubscribe(); // Limpar a assinatura da consulta de itens do carrinho
+        };
+      } catch (error) {
+        console.error('Erro ao consultar o banco de dados', error);
+      }
+    };
+
+    fetchData();
+  }, [reservationToEdit]);
 
   return (
     <div>

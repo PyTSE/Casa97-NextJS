@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import ReactInputMask from 'react-input-mask';
 import {
   flexRender,
   getCoreRowModel,
@@ -39,6 +40,7 @@ import { NumericFormat } from "react-number-format";
 import ItensSelection from "@/components/ItensSelecion";
 import ReservaForm from "@/components/ReservaForm";
 import DateRange from "@/components/DateRange";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -46,23 +48,70 @@ const database = getDatabase(firebaseApp);
 export default function TabelaDeReservas() {
   const [sorting, setSorting] = React.useState([]);
   const [columnFilters, setColumnFilters] = React.useState([]);
+  const [localId, setLocalId] = React.useState('');
+  const [itensAdicionais, setItensAdicionais] = React.useState([]);
+  const [locais, setLocais] = React.useState([]);
+  const [dataReserva, setData] = React.useState('');
+  const [selectedDate, setSelectedDate] = React.useState(new Date());
+  const [mesas, setMesas] = React.useState([]);
+  const [mesaId, setMesaId] = React.useState('');
   const [columnVisibility, setColumnVisibility] = React.useState({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [reservas, setReservasData] = React.useState([]);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [reservationToCancel, setReservationToCancel] = React.useState(null);
   const [reservationToEdit, setReservationToEdit] = React.useState(null);
+  const [whatsapp, setWhatsapp] = React.useState('');
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(null);
   const [showIInputEdit, setShowIInputEdit] = React.useState(false);
   const [showItensAdicionaisEdit, setShowItensAdicionaisEdit] = React.useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
-  const [isEndedDialogOpen, setIsEndedDialogOpen] = React.useState(false);
   const [reservationToPayment, setReservationToPayment] = React.useState(null);
-  const [reservationToEnd, setReservationToEnd] = React.useState(null);
+  const [total, setTotal] = React.useState(0);
   const [showReservaForm, setShowReservaForm] = React.useState(null);
   const [isDisableDialogOpen, setIsDisableDialogOpen] = React.useState(null);
+  const [cart, setCart] = React.useState({});
   
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const itensRef = ref(database, 'items');
+        const reservaRef = ref(database, `reservas/${reservationToEdit.id}/itensAdicionais`);
+        
+        // Consultar todos os itens adicionais
+        const itensUnsubscribe = onValue(itensRef, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            const itensData = Object.keys(data).map((key) => ({
+              id: key,
+              ...data[key],
+            }));
+            console.log('Itens Adicionais:', itensData);
+            setItensAdicionais(itensData);
+          } else {
+            setItensAdicionais([]);
+          }
+        });
+        
+        // Consultar itens do carrinho para a reserva específica
+        const reservaUnsubscribe = onValue(reservaRef, (snapshot) => {
+          const reservaItens = snapshot.val() || {};
+          console.log('Itens do Carrinho:', reservaItens);
+          setCart(reservaItens);
+        });
+        return () => {
+          itensUnsubscribe(); // Limpar a assinatura da consulta de itens adicionais
+          reservaUnsubscribe(); // Limpar a assinatura da consulta de itens do carrinho
+        };
+      } catch (error) {
+        console.error('Erro ao consultar o banco de dados', error);
+      }
+    };
+
+    fetchData();
+  }, [reservationToEdit]);
+
   React.useEffect(() => {
     const dbRef = ref(database, "reservas");
     const unsubscribe = onValue(dbRef, (snapshot) => {
@@ -72,21 +121,21 @@ export default function TabelaDeReservas() {
           const reserva = data[key];
           const mesaRef = ref(database, `spaces/${reserva.localId}/mesas/${reserva.mesaId}`);
           const localRef = ref(database, `spaces/${reserva.localId}`);
-          const itemsPromises = reserva.itensAdicionais.map(async (itemId) => {
+          const itemsPromises = (reserva.itensAdicionais || []).map(async (itemId) => {
             const itemRef = ref(database, `items/${itemId}`);
             const itemSnapshot = await get(itemRef);
             return { id: itemId, ...itemSnapshot.val() };
           });
-
+  
           const [mesaSnapshot, localSnapshot, items] = await Promise.all([
             get(mesaRef),
             get(localRef),
             Promise.all(itemsPromises)
           ]);
-
+  
           const mesaNome = mesaSnapshot.val().numero;
           const localNome = localSnapshot.val().name;
-
+  
           return {
             id: key,
             name: reserva.nome,
@@ -99,7 +148,7 @@ export default function TabelaDeReservas() {
             ended: reserva.finalizado,
           };
         });
-
+  
         Promise.all(reservasPromises)
           .then(reservas => setReservasData(reservas))
           .catch(error => console.error("Erro ao carregar reservas:", error));
@@ -107,9 +156,47 @@ export default function TabelaDeReservas() {
         setReservasData([]);
       }
     });
+  
+    return () => unsubscribe();
+  }, []);
+
+  React.useEffect(() => {
+    const locaisRef = ref(database, "spaces");
+    const unsubscribe = onValue(locaisRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const locaisData = Object.keys(data).map((key) => ({
+          id: key,
+          name: data[key].name,
+          photo: data[key].photo,
+          mesas: data[key].mesas ? Object.keys(data[key].mesas).map(mesaKey => ({
+            id: mesaKey,
+            ...data[key].mesas[mesaKey]
+          })) : [],
+        }));
+        setLocais(locaisData);
+      } else {
+        setLocais([]);
+      }
+    });
 
     return () => unsubscribe();
   }, []);
+
+  React.useEffect(() => {
+    const calculateTotal = () => {
+      let newTotal = 0;
+      itensAdicionais.forEach((item) => {
+        if (cart[item.id]) {
+          newTotal += item.itemValue * cart[item.id];
+        }
+      });
+      setTotal(newTotal);
+    };
+
+    calculateTotal();
+  }, [cart, itensAdicionais]);
+  
 
   const columns = [
     {
@@ -164,19 +251,6 @@ export default function TabelaDeReservas() {
       ),
     },
     {
-      accessorKey: "ended",
-      header: "Finalizado",
-      cell: ({ row }) => (
-        <ul>
-          {row.getValue("ended") === "Y" ? (
-            <Badge>Sim</Badge>
-          ) : (
-            <Badge variant="destructive">Não</Badge>
-          )}
-        </ul>
-      ),
-    },
-    {
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
@@ -190,7 +264,8 @@ export default function TabelaDeReservas() {
         const handleEditReservation = (reservation) => {
           setIsEditDialogOpen(true);
           setReservationToEdit(reservation);
-          console.log(reservation);
+          setWhatsapp(reservationToEdit?.whatsapp);
+          setData(reservationToEdit?.reservationDate);
           setShowIInputEdit(true);
         };
       
@@ -207,11 +282,6 @@ export default function TabelaDeReservas() {
               {reservation.paid === "N" && (
                 <DropdownMenuItem onClick={() => handlePayment(reservation)} className="cursor-pointer">
                   Alterar para Pago
-                </DropdownMenuItem>
-              )}
-              {reservation.ended === "N" && (
-                <DropdownMenuItem onClick={() => handleEnd(reservation)} className="cursor-pointer">
-                  Finalizar Reserva
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => handleCancelReservation(reservation)} className="cursor-pointer">
@@ -248,7 +318,43 @@ export default function TabelaDeReservas() {
     getSortedRowModel: getSortedRowModel(),
   });
 
+  const handleCancelEdit = () => {
+    setCart({});
+    setShowItensAdicionaisEdit(false);
+  };
+
   const handleConfirmCancel = async () => {
+    if (reservationToCancel) {
+      const reservationRef = ref(database, `reservas/${reservationToCancel.id}`);
+      await remove(reservationRef);
+      setReservasData(prev => prev.filter(r => r.id !== reservationToCancel.id));
+      setDialogOpen(false);
+    }
+  };
+
+
+  const handleAddItem = (itemId) => {
+    setCart((prevCart) => ({
+      ...prevCart,
+      [itemId]: (prevCart[itemId] || 0) + 1
+    }));
+  };
+
+  const handleRemoveItem = (itemId) => {
+    setCart((prevCart) => ({
+      ...prevCart,
+      [itemId]: Math.max((prevCart[itemId] || 0) - 1, 0)
+    }));
+  };
+
+  const calculateTotal = () => {
+    return itensAdicionais.reduce((total, item) => {
+      const quantity = cart[item.id] || 0;
+      return total + (item.itemValue * quantity);
+    }, 0);
+  };
+
+  const handleSubmit = async () => {
     if (reservationToCancel) {
       const reservationRef = ref(database, `reservas/${reservationToCancel.id}`);
       await remove(reservationRef);
@@ -271,17 +377,31 @@ export default function TabelaDeReservas() {
     setIsPaymentDialogOpen(true);
   }
 
-  const handleEnd = (reservation) => {
-    setReservationToEnd(reservation);
-    setIsEndedDialogOpen(true);
-  }
+  const handleLocalMesaChange = async (localId) => {
+    setLocalId(localId);
+    setMesaId('');
+    const selectedLocal = locais.find(local => local.id === localId);
+    
+    if (selectedLocal) {
+      // Obter todas as mesas ativas do local selecionado
+      const mesasAtivas = selectedLocal.mesas.filter(mesa => mesa.ativo);
+  
+      // Obter as reservas para a data selecionada
+      const reservasRef = ref(database, 'reservas');
+      const reservasSnapshot = await get(reservasRef);
+      const reservasData = reservasSnapshot.val() || {};
 
-  const handleConfirmEnd = async () => {
-    if (reservationToEnd) {
-      const reservationRef = ref(database, `reservas/${reservationToEnd.id}`);
-      await update(reservationRef, { finalizado: "Y" });
-      setReservasData(prev => prev.map(r => r.id === reservationToEnd.id ? { ...r, ended: "Y" } : r));
-      setIsEndedDialogOpen(false);
+      const mesasComReserva = mesasAtivas.map(mesa => {
+        const isReserved = Object.values(reservasData).some(reserva => {
+          return reserva.mesaId === mesa.id && reserva.dataReserva === dataReserva;
+        });
+        return {
+          ...mesa,
+          reservado: isReserved,
+        };
+      });
+  
+      setMesas(mesasComReserva);
     }
   };
 
@@ -410,18 +530,6 @@ export default function TabelaDeReservas() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={isEndedDialogOpen} onOpenChange={setIsEndedDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Alterar para Finalizado</DialogTitle>
-          </DialogHeader>
-          <p>Tem certeza que deseja finalizar esta reserva?</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEndedDialogOpen(false)}>Não</Button>
-            <Button onClick={handleConfirmEnd}>Sim</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
       <DialogContent className="w-full">
         <DialogHeader>
@@ -429,44 +537,144 @@ export default function TabelaDeReservas() {
           <DialogDescription>Edite os detalhes da reserva.</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 mb-4">
+        <form onSubmit={handleSubmit}>
           {showIInputEdit && (
             <>
               <Label htmlFor="edit-name">Nome do Cliente</Label>
               <Input type="text" id="edit-name" defaultValue={reservationToEdit?.name} />
               <Label htmlFor="edit-whatsapp">WhatsApp</Label>
-              <Input type="text" id="edit-whatsapp" defaultValue={reservationToEdit?.whatsapp} />
+              <ReactInputMask
+                    id="edit-whatsapp"
+                    mask="(99) 99999-9999"
+                    value={whatsapp}
+                    defaultValue={reservationToEdit?.whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                  >
+                    {(inputProps) => (
+                      <Input
+                        {...inputProps}
+                        id="whatsapp"
+                        type="text"
+                        required
+                        placeholder="(XX) XXXXX-XXXX"
+                      />
+                    )}
+              </ReactInputMask>
+              <Label htmlFor="data">Data da Reserva</Label>
+                  <Input
+                    id="data"
+                    type="date"
+                    defaultValue={dataReserva}
+                    value={dataReserva}
+                    onChange={(e) => setData(e.target.value)}
+                    required
+                  />
               <Label htmlFor="value">Local</Label>
-              <Input type="text" id="value" defaultValue={reservationToEdit?.location} />
+              <Select 
+                id="local" 
+                value={localId}
+                onValueChange={handleLocalMesaChange}
+                defaultValue={reservationToEdit?.location}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um local" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Locais</SelectLabel>
+                    {locais.map((local) => (
+                      <SelectItem key={local.id} value={local.id}>
+                        {local.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
               <Label htmlFor="value">Mesa</Label>
-              <Input type="text" id="value" defaultValue={reservationToEdit.table} />
-              <Button onClick={handleAditionalItensEdit}>Itens Adicionais</Button>
+              <Select 
+                id="mesa" 
+                value={mesaId}
+                onValueChange={(value) => setMesaId(value)}
+                disabled={mesas.length === 0} // Desabilitar select se não houver mesas disponíveis
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione uma mesa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Mesas</SelectLabel>
+                    {mesas.map((mesa) => (
+                      <SelectItem 
+                        key={mesa.id} 
+                        value={mesa.id} 
+                        disabled={mesa.reservado} // Desabilitar mesas reservadas
+                      >
+                        {mesa.numero} {mesa.reservado ? "(RESERVADO)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Button className='mt-5' onClick={handleAditionalItensEdit}>Itens Adicionais</Button>
             </>
           )}
           {showItensAdicionaisEdit && (
-            <ItensSelection />
+            <div>
+              {itensAdicionais.map((item) => (
+                <div key={item.id} className="mb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p>{item.name}</p>
+                      <p>{item.description}</p>
+                      <p>{`${item.itemValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}</p>
+                    </div>
+                    <div className="flex items-center">
+                      <Button 
+                        type="button"
+                        onClick={() => handleRemoveItem(item.id)} 
+                        disabled={cart[item.id] <= 0}
+                      >
+                        -
+                      </Button>
+                      <span className="mx-2">{cart[item.id] || 0}</span>
+                      <Button type="button" onClick={() => handleAddItem(item.id)}>
+                        +
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
+        </form>
         </div>
-        <DialogFooter>
-          <Button type="submit" onClick={handleSaveEdit}>
-            Salvar Alterações
-          </Button>
-          <DialogClose asChild>
-            <Button variant="ghost">Cancelar</Button>
-          </DialogClose>
+        <DialogFooter className="gap-36">
+          <div className="bold-16 flex-col">
+            <h3>Total:</h3>
+            <h3>{calculateTotal().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
+          </div>
+          <div>
+            <Button type="submit" onClick={handleSaveEdit}>
+              Salvar Alterações
+            </Button>
+            <DialogClose asChild>
+              <Button variant="ghost" onClick={handleCancelEdit}>Cancelar</Button>
+            </DialogClose>
+          </div>
+
         </DialogFooter>
       </DialogContent>
     </Dialog>
     <Dialog open={showReservaForm} onOpenChange={setShowReservaForm}>
-        <DialogContent className="max-w-[50vw] w-full">
+        <DialogContent className=" max-w-[40vw]">
           <DialogHeader>
-            <DialogTitle>Adicionar Reserva</DialogTitle>
             <DialogClose asChild>
               <Button className="absolute top-4 right-4" variant="ghost">
               </Button>
             </DialogClose>
           </DialogHeader>
-          <div className="pt-6">
-            <ReservaForm />
+          <div className="w-full">
+            <ReservaForm type="admin"/>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowReservaForm(false)}>
@@ -482,7 +690,7 @@ export default function TabelaDeReservas() {
           </DialogHeader>
           <DateRange></DateRange>
         </DialogContent>
-      </Dialog>
+    </Dialog>
     </div>
   );
 }
