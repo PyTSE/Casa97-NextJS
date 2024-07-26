@@ -164,7 +164,7 @@ const ReservaForm = (props) => {
   }, []);
 
   const handleShowDropdowns = () => {
-
+    console.log(dataReserva);
     if(numeroPessoas > 4){
       setShowModalPessoas(true);
       toast({
@@ -454,7 +454,7 @@ const ReservaForm = (props) => {
                       id="data"
                       className="border-2 rounded-sm text-center cursor-pointer"
                       selected={dataReserva}
-                      onChange={(date) => setData(date)}
+                      onChange={(date) => setData(date.toISOString().split('T')[0])}
                       required
                       locale={ptBR}
                       placeholderText="Selecione uma data"

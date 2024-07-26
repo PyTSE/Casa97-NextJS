@@ -41,6 +41,7 @@ import ItensSelection from "@/components/ItensSelecion";
 import ReservaForm from "@/components/ReservaForm";
 import DateRange from "@/components/DateRange";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AuthGuard from "@/components/AuthGuard";
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -415,6 +416,7 @@ export default function TabelaDeReservas() {
   };
 
   return (
+    <AuthGuard>
     <div>
 <div className="flex items-center py-4">
   <Input
@@ -692,5 +694,6 @@ export default function TabelaDeReservas() {
         </DialogContent>
     </Dialog>
     </div>
+    </AuthGuard>
   );
 }

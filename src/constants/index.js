@@ -17,15 +17,15 @@ export const FOOTER_CONTACT_INFO = {
     title: 'Entre em contato conosco',
     links: [
         {label: 'WhatsApp', value: '(47) 3227-9537', link: 'https://wa.me/554732279537'},
-        {label: 'Email', value: 'contato@casa97.com.br', link: 'https://wa.me/5547988367106'},
+        {label: 'Email', value: 'contato@casa97.com.br', link: ''},
     ],
 };
 
 export const SOCIALS = {
     title: 'Redes Sociais',
     links: [
-        {label: '/facebook.svg', link: 'https://www.facebook.com/Casa97Joinville/'},
-        {label: '/instagram.svg', link: 'https://www.instagram.com/casa97joinville/'}
+        {id: 1, label: '/facebook.svg', link: 'https://www.facebook.com/Casa97Joinville/'},
+        {id: 2, label: '/instagram.svg', link: 'https://www.instagram.com/casa97joinville/'}
     ]
 }
 

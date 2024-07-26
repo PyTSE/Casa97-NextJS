@@ -1,5 +1,5 @@
 "use client";
-
+import "@/app/globals.css";
 import EventsSection from "@/components/EventsSection";
 import Hero from "@/components/Hero";
 import Locations from "@/components/Locations";

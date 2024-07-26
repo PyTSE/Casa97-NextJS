@@ -36,6 +36,7 @@ import {
 import { useReactTable, flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, getFilteredRowModel } from "@tanstack/react-table";
 import { firebaseConfig } from "@/constants";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import AuthGuard from "@/components/AuthGuard";
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -224,6 +225,7 @@ export default function SpacesTable() {
   };
 
   return (
+    <AuthGuard>
     <div className="w-full p-4">
       <div className="flex items-center py-4">
         <Input
@@ -354,5 +356,6 @@ export default function SpacesTable() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </AuthGuard>
   );
 }

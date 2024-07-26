@@ -13,24 +13,11 @@ const Hero = () => {
   const [nextImageIndex, setNextImageIndex] = useState(1);
   const [isFading, setIsFading] = useState(false);
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setIsFading(true);
-      setTimeout(() => {
-        setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-        setNextImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-        setIsFading(false);
-      }, 500); // Tempo da transição para o fade
-    }, 3500); // Intervalo total incluindo o tempo de transição
-
-    return () => clearInterval(intervalId); // Limpa o intervalo ao desmontar o componente
-  }, []);
-
   return (
     <section className='flexCenter bg-hero-sm lg:bg-hero max-container padding-container flex flex-col gap-20 py-10 pb-32 md:gap-28 lg:py-20 xl:flex-row'>
       <div className='relative z-20 flex flex-1 flex-col xl:w-1/2 py-28'>
         <h1 className='bold-52 text-gray-50 lg:bold-88'>A Casa mais charmosa de Joinville!</h1>
-        <p className='regular-16 mt-6 text-gray-400 xl:max-w-[520px]'>
+        <p className='regular-16 mt-6 text-gray-400 xl:max-w-[720px]'>
         À primeira vista, nem parece um restaurante. A entrada, as mesas, o banheiro, tudo lembra uma casa normal. Um portão de ferro, um jardim na entrada e a porta principal que dá acesso para os fundos da casa.
         Tudo simples, mas elegante e muito bonito. Atendimento personalizado, alimentos frescos e bem preparados, temperos diferenciados. Oferecer bem-estar e trazer as boas lembranças do aconchego do lar são a nossa missão.
         </p>
@@ -59,23 +46,6 @@ const Hero = () => {
             href="/booking"
           />
         </div>
-      </div>
-      <div className="p-6">
-        <div className='blob'>
-          <img
-            src={images[currentImageIndex]}
-            alt="Imagem Bonita"
-            className={`w-full h-full object-cover ${isFading ? 'fade-out' : 'fade-in'}`}
-          />
-          <img
-            src={images[nextImageIndex]}
-            alt="Imagem Bonita"
-            className={`w-full h-full object-cover absolute inset-0 ${isFading ? 'fade-in' : 'fade-out'}`}
-          />
-        </div>
-      </div>
-      <div className='pb-80'>
-
       </div>
     </section>
   );

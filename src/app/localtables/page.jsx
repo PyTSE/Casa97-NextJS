@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog } from "@radix-ui/react-alert-dialog";
 import { AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { onValue } from "firebase/database";
+import AuthGuard from "@/components/AuthGuard";
 
 function LocaisAccordion() {
   const [locais, setLocais] = React.useState([]);
@@ -113,6 +114,7 @@ function LocaisAccordion() {
   
   return (
     <>
+    <AuthGuard>
     <Accordion type="single" collapsible className="w-full p-8">
       {!loading &&
         locais.map((local) => (
@@ -206,6 +208,7 @@ function LocaisAccordion() {
           </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+    </AuthGuard>
     </>
   );
 }

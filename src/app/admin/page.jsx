@@ -29,8 +29,7 @@ export default function Login() {
     const auth = getAuth();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      console.log("Usuário logado com sucesso!");
-      router.push('/dashboard'); // Redirecionar para /dashboard após login bem-sucedido
+      router.push('/dashboard');
     } catch (error) {
       setError(error.message);
     }
