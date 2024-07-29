@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "../../../public/casa97.png";
-import Link from "next/link";
 import { useRouter } from 'next/navigation'; // Certifique-se de usar o import correto
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import "@/lib/firebase"; 
+import { toast } from "@/components/ui/use-toast";
 
 export const description =
   "Uma página de login com duas colunas. A primeira coluna tem o formulário de login com e-mail e senha. Há um link para recuperar senha e um link para se cadastrar se você não tiver uma conta. A segunda coluna tem uma imagem de capa.";
@@ -31,7 +31,7 @@ export default function Login() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error) {
-      setError(error.message);
+      setError("Login ou senha inválidos!");
     }
   };
 
@@ -39,9 +39,13 @@ export default function Login() {
     const auth = getAuth();
     try {
       await sendPasswordResetEmail(auth, email);
-      alert("E-mail de recuperação de senha enviado!");
+      toast({
+        variant: "outline",
+        title: "E-mail enviado.",
+        description: "E-mail de recuperação de senha enviado!",
+      });
     } catch (error) {
-      setError(error.message);
+      setError("Preencha o e-mail para recuperar senha.");
     }
   };
 

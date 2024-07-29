@@ -113,8 +113,8 @@ function LocaisAccordion() {
   }
   
   return (
-    <>
     <AuthGuard>
+    <>
     <Accordion type="single" collapsible className="w-full p-8">
       {!loading &&
         locais.map((local) => (
@@ -208,8 +208,8 @@ function LocaisAccordion() {
           </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
-    </AuthGuard>
     </>
+    </AuthGuard>
   );
 }
 
