@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { CalendarCheck, Moon, Sun, ShoppingCart, Circle } from "lucide-react";
 import { useTheme } from "next-themes";
 import Image from 'next/image';
+import { parseISO, addDays, isBefore, isEqual } from 'date-fns';
 import Logo from '../../public/casa97.png';
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from './ui/select';
@@ -23,6 +24,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import DatePicker from 'react-datepicker';
 import { ptBR } from 'date-fns/locale';
 import { createMessage, sendMessage } from '@/lib/utils';
+import ImageZoom from './ImageZoom';
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -81,20 +83,23 @@ const ReservaForm = (props) => {
 
   const generateExcludedDates = (intervals) => {
     let excludedDates = [];
-
+  
     intervals.forEach(interval => {
-      let startDate = new Date(interval.dataInicio);
-      let endDate = new Date(interval.dataFim);
-      let currentDate = new Date(startDate);
-
-      while (currentDate <= endDate) {
-        excludedDates.push(new Date(currentDate));
-        currentDate.setDate(currentDate.getDate() + 1);
+      let startDate = parseISO(interval.dataInicio); // Garantir que a data seja interpretada corretamente
+      let endDate = parseISO(interval.dataFim);
+      let currentDate = startDate;
+  
+      while (isBefore(currentDate, endDate) || isEqual(currentDate, endDate)) {
+        excludedDates.push(currentDate);
+        currentDate = addDays(currentDate, 1);
       }
     });
-
+  
     return excludedDates;
   };
+  
+  
+  
 
   useEffect(() => {
     const fetchIntervals = async () => {
@@ -164,7 +169,6 @@ const ReservaForm = (props) => {
   }, []);
 
   const handleShowDropdowns = () => {
-    console.log(dataReserva);
     if(numeroPessoas > 4){
       setShowModalPessoas(true);
       toast({
@@ -320,7 +324,6 @@ const ReservaForm = (props) => {
       month: 'numeric',
       day: 'numeric',
     }).format(new Date(dataReserva));
-    console.log(mesaNome, localNome);
     const payload = {
       formattedDate,
       nome,
@@ -518,7 +521,7 @@ const ReservaForm = (props) => {
                     </Select>
                   {fotoLocal && (
                     <div className="flex justify-center w-80">
-                      <img src={fotoLocal} alt="Foto do Local" className="max-w-full h-auto rounded-sm" />
+                      <ImageZoom src={fotoLocal} alt="Foto do Local"/>
                     </div>
                   )}
                 </div>
@@ -558,7 +561,7 @@ const ReservaForm = (props) => {
                       <CardHeader>
                         <CardTitle className='mb-4'>{item.name}</CardTitle>
                         <div className="flex items-center space-x-4 rounded-md border lg:h-60">
-                          <Image src={item.photo} alt={item.name} width={502} height={502} className="h-full w-full object-cover"/>
+                          <ImageZoom src={item.photo} alt={item.name} />
                         </div>
                       </CardHeader>
                       <CardContent>

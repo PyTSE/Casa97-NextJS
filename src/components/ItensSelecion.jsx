@@ -28,7 +28,6 @@ const ItensSelection = ({ handleItemChange, handleAdicionarItem, isAdding, setSh
               id: key,
               ...data[key],
             }));
-            console.log('Itens Adicionais:', itensData);
             setItensAdicionais(itensData);
           } else {
             setItensAdicionais([]);
@@ -38,7 +37,6 @@ const ItensSelection = ({ handleItemChange, handleAdicionarItem, isAdding, setSh
         // Consultar itens do carrinho para a reserva específica
         const reservaUnsubscribe = onValue(reservaRef, (snapshot) => {
           const reservaItens = snapshot.val() || {};
-          console.log('Itens do Carrinho:', reservaItens);
           setCart(reservaItens);
         });
 

@@ -122,7 +122,6 @@ export default function ItemsTable() {
   const handleDeleteSpace = (itemId) => {
     remove(ref(database, `items/${itemId}`))
       .then(() => {
-        console.log("Local excluído com sucesso:", itemId);
         setItemsData((prevData) => prevData.filter((item) => item.id !== itemId));
       })
       .catch((error) => {
@@ -136,7 +135,6 @@ export default function ItemsTable() {
       const numericItemValue = parseFloat(cleanedItemValue.replace(',', '.'));
   
       const newSpaceRef = await push(ref(database, "items"), { name: itemName, itemValue: numericItemValue });
-      console.log("Novo item adicionado com sucesso:", itemName);
   
       const itemId = newSpaceRef.key;
   
@@ -155,7 +153,6 @@ export default function ItemsTable() {
     try {
       const storageReference = storageRef(storage, `items/${itemId}/photo.jpg`);
       await uploadBytes(storageReference, photoFile);
-      console.log("Foto adicionada com sucesso:", itemId);
     } catch (error) {
       console.error("Erro ao adicionar foto:", error);
     }
@@ -173,7 +170,6 @@ export default function ItemsTable() {
       if (data) {
         const items = Object.keys(data).map((key) => ({ id: key, ...data[key] }));
         setItemsData(items);
-        console.log(items);
       } else {
         setItemsData([]);
       }

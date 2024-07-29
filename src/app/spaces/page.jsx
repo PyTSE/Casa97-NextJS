@@ -100,7 +100,6 @@ export default function SpacesTable() {
   const handleDeleteSpace = (spaceId) => {
     remove(ref(database, `spaces/${spaceId}`))
       .then(() => {
-        console.log("Local excluído com sucesso:", spaceId);
         setSpacesData((prevData) => prevData.filter((space) => space.id !== spaceId));
       })
       .catch((error) => {
@@ -111,7 +110,6 @@ export default function SpacesTable() {
   const handleAddSpace = async (spaceName, photoFile, setSpacesData) => {
     try {
       const newSpaceRef = await push(ref(database, "spaces"), { name: spaceName });
-      console.log("Novo espaço adicionado com sucesso:", spaceName);
       
       const spaceId = newSpaceRef.key;
       await handleAddPhoto(spaceId, photoFile);
@@ -129,7 +127,6 @@ export default function SpacesTable() {
     try {
       const storageReference = storageRef(storage, `spaces/${spaceId}/photo.jpg`);
       await uploadBytes(storageReference, photoFile);
-      console.log("Foto adicionada com sucesso:", spaceId);
     } catch (error) {
       console.error("Erro ao adicionar foto:", error);
     }

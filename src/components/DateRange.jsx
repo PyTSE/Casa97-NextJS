@@ -5,7 +5,7 @@ import { Label } from '@radix-ui/react-menu';
 import { getDatabase, ref, set, onValue, remove } from '@firebase/database';
 import { initializeApp } from '@firebase/app';
 import { firebaseConfig } from '@/constants';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { toast } from './ui/use-toast';
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -110,8 +110,13 @@ const DateRange = () => {
         <ul>
           {intervalos.length > 0 ? (
             intervalos.map((intervalo, index) => {
-            const dataInicioFormatada = format(new Date(intervalo.dataInicio), 'dd/MM/yyyy');
-              const dataFimFormatada = format(new Date(intervalo.dataFim), 'dd/MM/yyyy');
+              const dataInicioUTC = parseISO(intervalo.dataInicio);
+              const dataInicioLocal = new Date(dataInicioUTC.getTime() + dataInicioUTC.getTimezoneOffset() * 60000);
+              const dataInicioFormatada = format(dataInicioLocal, 'dd/MM/yyyy');
+              
+              const dataFimUTC = parseISO(intervalo.dataFim);
+              const dataFimLocal = new Date(dataFimUTC.getTime() + dataFimUTC.getTimezoneOffset() * 60000);
+              const dataFimFormatada = format(dataFimLocal, 'dd/MM/yyyy');
                 return (
             <div className='flexBetween'>
              <li key={index} className='border-b py-2'>
