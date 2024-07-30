@@ -15,7 +15,7 @@ const ImageZoom = ({ src, alt }) => {
         </div>
       </DialogTrigger>
       <DialogContent className="relative bg-white p-4 rounded-md">
-        <Image src={src} alt={alt} className="max-w-full max-h-full" width={600} height={600} />
+        <img src={src} alt={alt} className="max-w-full max-h-full"/>
         <DialogClose asChild>
         </DialogClose>
       </DialogContent>
