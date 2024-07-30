@@ -8,7 +8,7 @@ const ImageZoom = ({ src, alt }) => {
     <Dialog>
       <DialogTrigger asChild>
         <div className="relative cursor-pointer group">
-          <Image src={src} alt={alt} className="w-full h-full object-cover" width={300} height={300} />
+          <img src={src} alt={alt} className="w-full h-full object-cover"/>
           <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <Search className="text-white w-12 h-12" />
           </div>
