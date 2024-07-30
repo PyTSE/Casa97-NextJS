@@ -97,9 +97,6 @@ const ReservaForm = (props) => {
   
     return excludedDates;
   };
-  
-  
-  
 
   useEffect(() => {
     const fetchIntervals = async () => {
@@ -592,15 +589,12 @@ const ReservaForm = (props) => {
             {carrinhoOpen && (
               <>
               <Button 
-                variant="outline" 
-                size="icon" 
-                type='button'
-                className="absolute bottom-16 right-4 w-100 bg-blue-100"
-                onClick={() => { setIsDialogOpen(true) }}
+                className="fixed-button"
+                type="button"
+                onClick={() => setIsDialogOpen(true)}
               >
-                <p>Carrinho</p>
-                <ShoppingCart className="h-[1.2rem] w-[1.9rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"/>
-                <span className="sr-only">Toggle theme</span>
+                <ShoppingCart className="h-6 w-6" />
+                <span className="sr-only">Carrinho</span>
               </Button>
               </>
             )}

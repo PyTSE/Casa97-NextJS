@@ -303,6 +303,13 @@
   opacity: 0;
 }
 
+.fixed-button {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 50;
+}
+
 .date-picker-container {
   position: relative;
   display: inline-block;
