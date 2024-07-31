@@ -182,7 +182,16 @@ const ReservaForm = (props) => {
       setFormError(true);
       toast({
         title: "Erro no formulário",
+        variant: "destructive",
         description: "Por favor, insira um número de WhatsApp válido no formato (XX) XXXXX-XXXX.",
+        status: "error",
+      });
+    } else if(!validarNome(nome)){
+      setFormError(true);
+      toast({
+        title: "Erro no formulário",
+        variant: "destructive",
+        description: "Por favor, insira um nome válido.",
         status: "error",
       });
     } else {
@@ -289,6 +298,11 @@ const ReservaForm = (props) => {
     const regex = /^\d{2}\d{5}\d{4}$/;
     return regex.test(numeroLimpo);
   };
+
+  function validarNome(nome) {
+    const regex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/;
+    return regex.test(nome);
+  }
 
   const handleMesaSelect = (mesa) => {
     setMesaId(mesa.id);
@@ -524,23 +538,31 @@ const ReservaForm = (props) => {
                 </div>
                 <div className='flexCenter flex-col w-full lg:w-1/2'>
                   <Label htmlFor="mesa">Selecione a Mesa</Label>
-                  {mesas.map((mesa) => (
-                    <div key={mesa.id} className="w-full flex justify-center space-x-2 m-3">
-                      <Button
+                  {mesas.map((mesa) => {
+                    const isDisabledByCapacity = numeroPessoas > mesa.numeroPessoas;
+                    const isDisabled = !isMesaAtiva(mesa) || reservas.some(reserva => reserva.mesaId === mesa.id) || isDisabledByCapacity;
+
+                    return (
+                      <div key={mesa.id} className="w-full flex justify-center space-x-2 m-3">
+                        <Button
                           type="button"
                           className={`w-full ${mesaId === mesa.id ? 'bg-blue-500 !important' : ''}`}
                           variant='default'
-                          disabled={!isMesaAtiva(mesa) || reservas.some(reserva => reserva.mesaId === mesa.id)}
+                          disabled={isDisabled}
                           onClick={() => {
-                            if (isMesaAtiva(mesa)) {
+                            if (!isDisabled) {
                               handleMesaSelect(mesa);
                             }
                           }}
                         >
-                          Mesa {mesa.numero} {reservas.some(reserva => reserva.mesaId === mesa.id) && "(Reservado)"} {!isMesaAtiva(mesa) && "(Desativada)"}
-                      </Button>
-                    </div>
-                  ))}
+                          Mesa {mesa.numero}
+                          {reservas.some(reserva => reserva.mesaId === mesa.id) && " (Reservado)"}
+                          {!isMesaAtiva(mesa) && " (Desativada)"}
+                          {isDisabledByCapacity && ` - Mesa para ${mesa.numeroPessoas} pessoas`}
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               <div className='flex gap-4'>

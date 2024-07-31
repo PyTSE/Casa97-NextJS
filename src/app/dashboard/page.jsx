@@ -10,7 +10,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { format } from "date-fns";
 import { ArrowUpDown, ChevronDown, MoreHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,12 +35,12 @@ import { getDatabase, ref, onValue, get, remove, update } from "firebase/databas
 import { firebaseConfig } from "@/constants";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { NumericFormat } from "react-number-format";
-import ItensSelection from "@/components/ItensSelecion";
+import { format, parseISO } from 'date-fns';
 import ReservaForm from "@/components/ReservaForm";
 import DateRange from "@/components/DateRange";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AuthGuard from "@/components/AuthGuard";
+import { toast } from "@/components/ui/use-toast";
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -50,12 +49,14 @@ export default function TabelaDeReservas() {
   const [sorting, setSorting] = React.useState([]);
   const [columnFilters, setColumnFilters] = React.useState([]);
   const [localId, setLocalId] = React.useState('');
+  const [localIdToEdit, setLocalIdToEdit] = React.useState('');
   const [itensAdicionais, setItensAdicionais] = React.useState([]);
   const [locais, setLocais] = React.useState([]);
   const [dataReserva, setData] = React.useState('');
   const [selectedDate, setSelectedDate] = React.useState(new Date());
   const [mesas, setMesas] = React.useState([]);
   const [mesaId, setMesaId] = React.useState('');
+  const [mesaIdToEdit, setMesaIdToEdit] = React.useState('');
   const [columnVisibility, setColumnVisibility] = React.useState({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [reservas, setReservasData] = React.useState([]);
@@ -71,46 +72,10 @@ export default function TabelaDeReservas() {
   const [reservationToPayment, setReservationToPayment] = React.useState(null);
   const [total, setTotal] = React.useState(0);
   const [showReservaForm, setShowReservaForm] = React.useState(null);
+  const [nomeCliente, setNomeCliente] = React.useState('');
   const [isDisableDialogOpen, setIsDisableDialogOpen] = React.useState(null);
   const [cart, setCart] = React.useState({});
   
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const itensRef = ref(database, 'items');
-        const reservaRef = ref(database, `reservas/${reservationToEdit.id}/itensAdicionais`);
-        
-        // Consultar todos os itens adicionais
-        const itensUnsubscribe = onValue(itensRef, (snapshot) => {
-          const data = snapshot.val();
-          if (data) {
-            const itensData = Object.keys(data).map((key) => ({
-              id: key,
-              ...data[key],
-            }));
-            setItensAdicionais(itensData);
-          } else {
-            setItensAdicionais([]);
-          }
-        });
-        
-        // Consultar itens do carrinho para a reserva específica
-        const reservaUnsubscribe = onValue(reservaRef, (snapshot) => {
-          const reservaItens = snapshot.val() || {};
-          setCart(reservaItens);
-        });
-        return () => {
-          itensUnsubscribe(); // Limpar a assinatura da consulta de itens adicionais
-          reservaUnsubscribe(); // Limpar a assinatura da consulta de itens do carrinho
-        };
-      } catch (error) {
-        console.error('Erro ao consultar o banco de dados', error);
-      }
-    };
-
-    fetchData();
-  }, [reservationToEdit]);
-
   React.useEffect(() => {
     const dbRef = ref(database, "reservas");
     const unsubscribe = onValue(dbRef, (snapshot) => {
@@ -211,9 +176,19 @@ export default function TabelaDeReservas() {
     {
       accessorKey: "reservationDate",
       header: "Data da Reserva",
-      cell: ({ row }) => (
-        <div>{format(new Date(row.getValue("reservationDate")), "dd/MM/yyyy")}</div>
-      )
+      cell: ({ row }) => {
+        const reservationDate = row.getValue("reservationDate");
+        
+        const dataInicioUTC = parseISO(reservationDate);
+        
+        const dataInicioLocal = new Date(dataInicioUTC.getTime() + dataInicioUTC.getTimezoneOffset() * 60000);
+        
+        const dataInicioFormatada = format(dataInicioLocal, 'dd/MM/yyyy');
+
+        return (
+          <div>{dataInicioFormatada}</div>
+        );
+      }
     },
     {
       accessorKey: "table",
@@ -263,10 +238,52 @@ export default function TabelaDeReservas() {
         const handleEditReservation = (reservation) => {
           setIsEditDialogOpen(true);
           setReservationToEdit(reservation);
-          setWhatsapp(reservationToEdit?.whatsapp);
-          setData(reservationToEdit?.reservationDate);
+          setNomeCliente(reservation.name);
+          const fetchData = async () => {
+            try {
+              const itensRef = ref(database, 'items');
+              const reservaRef = ref(database, `reservas/${reservation.id}`);
+          
+              const itensUnsubscribe = onValue(itensRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                  const itensData = Object.keys(data).map((key) => ({
+                    id: key,
+                    ...data[key],
+                  }));
+                  setItensAdicionais(itensData);
+                } else {
+                  setItensAdicionais([]);
+                }
+              });
+          
+              const reservaUnsubscribe = onValue(reservaRef, (snapshot) => {
+                const reservaData = snapshot.val() || {};
+                const { localId, mesaId, itensAdicionais = [] } = reservaData;
+                setLocalId(localId || '');
+                setMesaId(mesaId || '');
+                itensAdicionais.forEach(itemId => {
+                  if (itemId) {
+                    handleAddItem(itemId);
+                  }
+                });
+              });
+          
+              return () => {
+                itensUnsubscribe();
+                reservaUnsubscribe();
+              };
+            } catch (error) {
+              console.error('Erro ao consultar o banco de dados', error);
+            }
+          };
+        
+          fetchData();
+          setWhatsapp(reservation.whatsapp);
+          setData(reservation.reservationDate);
           setShowIInputEdit(true);
         };
+        
       
         return (
           <DropdownMenu>
@@ -331,7 +348,6 @@ export default function TabelaDeReservas() {
     }
   };
 
-
   const handleAddItem = (itemId) => {
     setCart((prevCart) => ({
       ...prevCart,
@@ -352,6 +368,7 @@ export default function TabelaDeReservas() {
       return total + (item.itemValue * quantity);
     }, 0);
   };
+  
 
   const handleSubmit = async () => {
     if (reservationToCancel) {
@@ -409,54 +426,77 @@ export default function TabelaDeReservas() {
     setShowItensAdicionaisEdit(true);
   };
 
-  const handleSaveEdit = async () => {
-
+  const handleSaveEdit = async (event) => {
+    event.preventDefault();
+    console.log(cart);
+    const whatsappCliente = whatsapp;
+    const localSelecionado = localId;
+    const mesaSelecionada = mesaId;
+    
+    const updatedReservation = {
+      nome: nomeCliente,
+      whatsapp: whatsappCliente,
+      dataReserva: dataReserva,
+      localId: localSelecionado,
+      mesaId: mesaSelecionada,
+      itensAdicionais: Object.keys(cart).filter(id => cart[id] > 0)
+    };
+  
+    try {
+      const reservaRef = ref(database, `reservas/${reservationToEdit.id}`);
+      await update(reservaRef, updatedReservation);
+      toast.success('Reserva atualizada com sucesso!');
+      setIsEditDialogOpen(false);
+      setCart({});
+      setShowItensAdicionaisEdit(false);
+    } catch (error) {
+      console.error('Erro ao atualizar a reserva:', error);
+    }
   };
 
   return (
     <AuthGuard>
     <div>
-<div className="flex items-center py-4">
-  <Input
-    placeholder="Filtrar reservas"
-    value={globalFilter ?? ""}
-    onChange={(event) => setGlobalFilter(event.target.value)}
-    className="max-w-sm"
-  />
-  <div className="flex ml-4">
-    <Button className="ml-2" onClick={() => setShowReservaForm(true)}>
-      Adicionar Reserva
-    </Button>
-    <Button className="ml-2" onClick={() => setIsDisableDialogOpen(true)}>
-      Desativar Reservas
-    </Button>
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="ml-2">
-          Colunas <ChevronDown className="ml-2 h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {table
-          .getAllColumns()
-          .filter((column) => column.getCanHide())
-          .map((column) => (
-            <DropdownMenuCheckboxItem
-              key={column.id}
-              className="capitalize"
-              checked={column.getIsVisible()}
-              onCheckedChange={(value) =>
-                column.toggleVisibility(!!value)
-              }
-            >
-              {column.id}
-            </DropdownMenuCheckboxItem>
-          ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
-</div>
-
+      <div className="flex items-center py-4">
+        <Input
+          placeholder="Filtrar reservas"
+          value={globalFilter ?? ""}
+          onChange={(event) => setGlobalFilter(event.target.value)}
+          className="max-w-sm"
+        />
+        <div className="flex ml-4">
+          <Button className="ml-2" onClick={() => setShowReservaForm(true)}>
+            Adicionar Reserva
+          </Button>
+          <Button className="ml-2" onClick={() => setIsDisableDialogOpen(true)}>
+            Desativar Reservas
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-2">
+                Colunas <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -541,7 +581,13 @@ export default function TabelaDeReservas() {
           {showIInputEdit && (
             <>
               <Label htmlFor="edit-name">Nome do Cliente</Label>
-              <Input type="text" id="edit-name" defaultValue={reservationToEdit?.name} />
+              <Input 
+                type="text" 
+                id="edit-name" 
+                defaultValue={reservationToEdit?.name}
+                value={nomeCliente}
+                onChange={(e) => setNomeCliente(e.target.value)} 
+              />
               <Label htmlFor="edit-whatsapp">WhatsApp</Label>
               <ReactInputMask
                     id="edit-whatsapp"
@@ -574,7 +620,6 @@ export default function TabelaDeReservas() {
                 id="local" 
                 value={localId}
                 onValueChange={handleLocalMesaChange}
-                defaultValue={reservationToEdit?.location}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione um local" />
@@ -594,8 +639,8 @@ export default function TabelaDeReservas() {
               <Select 
                 id="mesa" 
                 value={mesaId}
+                defaultValue={mesaId}
                 onValueChange={(value) => setMesaId(value)}
-                disabled={mesas.length === 0} // Desabilitar select se não houver mesas disponíveis
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione uma mesa" />
@@ -607,7 +652,7 @@ export default function TabelaDeReservas() {
                       <SelectItem 
                         key={mesa.id} 
                         value={mesa.id} 
-                        disabled={mesa.reservado} // Desabilitar mesas reservadas
+                        disabled={mesa.reservado}
                       >
                         {mesa.numero} {mesa.reservado ? "(RESERVADO)" : ""}
                       </SelectItem>
@@ -620,7 +665,8 @@ export default function TabelaDeReservas() {
           )}
           {showItensAdicionaisEdit && (
             <div>
-              {itensAdicionais.map((item) => (
+              {itensAdicionais.map((item) => {
+              return (
                 <div key={item.id} className="mb-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -643,7 +689,8 @@ export default function TabelaDeReservas() {
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </form>
@@ -657,11 +704,14 @@ export default function TabelaDeReservas() {
             <Button type="submit" onClick={handleSaveEdit}>
               Salvar Alterações
             </Button>
-            <DialogClose asChild>
-              <Button variant="ghost" onClick={handleCancelEdit}>Cancelar</Button>
-            </DialogClose>
+            {showItensAdicionaisEdit ? (
+              <Button variant="ghost" onClick={() => {setShowIInputEdit(true); setShowItensAdicionaisEdit(false); }}>Voltar</Button>
+            ) : (
+              <DialogClose asChild>
+                <Button variant="ghost"onClick={() => {handleCancelEdit();  setCart({});}}>Cancelar</Button>
+              </DialogClose>
+            )}
           </div>
-
         </DialogFooter>
       </DialogContent>
     </Dialog>

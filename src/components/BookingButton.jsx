@@ -11,7 +11,7 @@ const BookingButton = ({type, title, icon, variant}) => {
     type={type}
     >
        <HandPlatter className="mr-2 h-4 w-4" />
-       <label className='bold-16 whitespace-nowrap'>{title}</label>
+       <label className='bold-16 whitespace-nowrap cursor-pointer'>{title}</label>
     </Button>
   )
 }

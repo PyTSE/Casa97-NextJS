@@ -11,7 +11,7 @@ import {
 
 export function CarouselDemo({ photos }) {
   return (
-    <Carousel className="w-full max-w-7xl h-full bg-slate-600 relative">
+    <Carousel className="w-full max-w-7xl h-full relative">
       <CarouselContent className="flex">
         {photos.map((photo, index) => (
           <CarouselItem key={index} className="flex-shrink-0 basis-full lg:basis-full">

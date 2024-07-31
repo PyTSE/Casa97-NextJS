@@ -31,19 +31,19 @@ export const SOCIALS = {
 
 export const EVENTS_INFO = [
     {
-        title: 'Alugue para um evento!',
-        description: 'Faça seu evento em nossos espaços e garanta a qualidade e comodidade que apenas a nossa casa consegue entregar a voce e seus convidados.',
-        photo: ['/casamento.png'],
+        title: 'Gastronomia',
+        description: 'Com uma proposta gastronômica de "comfort food", a nossa cozinha prepara cada prato, buscando oferecer a sensação de bem-estar e resgatando memórias afetivas. Conheça em detalhes nossas opções de entradas, pratos individuais, pratos para dividir, fondues e sobremesas.',
+        photo: ['/gastronomia-card.jpg'],
     },
     {
-        title: 'Coquetelaria especial',
-        description: 'Com uma seleção abrangente de drinks clássicos, releituras criativas e criações autorais, a Casa 97 oferece o que há de melhor no mundo da coquetelaria. Cada taça é cuidadosamente preparada para proporcionar uma experiência única.',
-        photo: ['/bebidas1.png'],
+        title: 'Coquetelaria',
+        description: 'Com uma seleção abrangente de drinks clássicos, releituras e criações autorais, a Casa 97 oferece o que há de melhor no mundo da coquetelaria. Cada taça é cuidadosamente preparada para proporcionar uma experiência única.',
+        photo: ['/coquetelaria-card.jpg'],
     },
     {
-        title: 'Decoração especial',
-        description: 'Transforme sua noite em um momento especial com nossas mesas decoradas. Oferecemos seis modelos exclusivos de mesas decoradas, que você pode incluir na sua reserva para criar a atmosfera perfeita para a sua ocasião.',
-        photo: ['/decoracao1.png'],
+        title: 'Mesas Decoradas',
+        description: 'Transforme sua noite em um momento especial. Oferecemos modelos exclusivos de mesas decoradas, que você pode incluir na sua reserva para criar a atmosfera perfeita para o seu jantar.',
+        photo: ['/mesas-card.jpg'],
     }
 ]
 

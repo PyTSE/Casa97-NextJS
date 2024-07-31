@@ -1,18 +1,8 @@
-import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import BookingButton from './BookingButton';
-
-const images = [
-  "/prato1.jpg",
-  "/foto-espelhos.jpg",
-  "/foto-lareira.jpg"
-];
+import Link from 'next/link';
 
 const Hero = () => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [nextImageIndex, setNextImageIndex] = useState(1);
-  const [isFading, setIsFading] = useState(false);
-
   return (
     <section className='flexCenter bg-hero-sm lg:bg-hero max-container padding-container flex flex-col gap-20 py-10 pb-32 md:gap-28 lg:py-20 xl:flex-row'>
       <div className='relative z-20 flex flex-1 flex-col xl:w-1/2 py-28'>
@@ -39,12 +29,13 @@ const Hero = () => {
           </p>
         </div>
         <div className='flex w-full gap-3 sm:flex-row justify-center lg:justify-start'>
+        <Link href="/booking" passHref>
           <BookingButton
             type="button"
             title="Reservar Agora!"
             variant="h-16 bg-gray-500"
-            href="/booking"
           />
+        </Link>
         </div>
       </div>
     </section>
