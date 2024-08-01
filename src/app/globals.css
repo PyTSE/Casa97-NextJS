@@ -177,7 +177,7 @@
   
   .bg-hero::before {
     content: "";
-    background-image: url('/foto-bg.png');
+    background-image: url('/foto-varanda.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -192,7 +192,7 @@
   }
   
   .bg-hero-sm {
-    background-image: url('/foto-bg.png');
+    background-image: url('/foto-varanda.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

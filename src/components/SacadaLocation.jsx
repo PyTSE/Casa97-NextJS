@@ -62,10 +62,10 @@ const locations = [
   {
     title: 'Bambus',
     photos: [
-      "/bar-2.jpg",
-      "/bar-3.jpg",
-      "/bar-1.jpg",
-      "/bar-4.jpg"
+      "/bambus-3.jpg",
+      "/bambus-1.jpg",
+      "/bambus-2.jpg",
+      "/bambus-4.jpg"
     ],
     description: "Seja bem-vindo à sala Bambu da Casa 97, um ambiente pequeno, mas encantador e acolhedor. Com decoração que mistura cores naturais, como o amarelo terroso, lambris, terracota e cinza escuro, criamos um espaço que aquece tanto o ambiente quanto os corações dos nossos clientes. Ideal para confraternizações pequenas de até 9 pessoas, transforme seu jantar em um evento privativo e exclusivo. Com duas mesas para casais e uma para 4 pessoas, é perfeito para encontros intimistas."
   }

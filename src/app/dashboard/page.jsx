@@ -41,6 +41,7 @@ import DateRange from "@/components/DateRange";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AuthGuard from "@/components/AuthGuard";
 import { toast } from "@/components/ui/use-toast";
+import FilterComponent from "@/components/FilterComponent";
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -75,6 +76,7 @@ export default function TabelaDeReservas() {
   const [nomeCliente, setNomeCliente] = React.useState('');
   const [isDisableDialogOpen, setIsDisableDialogOpen] = React.useState(null);
   const [cart, setCart] = React.useState({});
+  const [showFilters, setShowFilters] = React.useState(false);
   
   React.useEffect(() => {
     const dbRef = ref(database, "reservas");
@@ -457,20 +459,18 @@ export default function TabelaDeReservas() {
   return (
     <AuthGuard>
     <div>
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filtrar reservas"
-          value={globalFilter ?? ""}
-          onChange={(event) => setGlobalFilter(event.target.value)}
-          className="max-w-sm"
-        />
+      <div className="flex flex-col gap-5 my-4 py-4">
         <div className="flex ml-4">
+          <div>
           <Button className="ml-2" onClick={() => setShowReservaForm(true)}>
             Adicionar Reserva
           </Button>
+          </div>
+          <div>
           <Button className="ml-2" onClick={() => setIsDisableDialogOpen(true)}>
             Desativar Reservas
           </Button>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="ml-2">
@@ -495,6 +495,12 @@ export default function TabelaDeReservas() {
                 ))}
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button variant="outline" onClick={() => setShowFilters(true)}>
+              Filtrar <ChevronDown className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+        <div className="">
+          {showFilters && <FilterComponent columns={columns}/>}
         </div>
       </div>
       <div className="rounded-md border">

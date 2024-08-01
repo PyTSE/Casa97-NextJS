@@ -30,7 +30,7 @@ export function createMessage (payload) {
     *Chave PIX: 27.191.452/0001-54*
     Titular: Casa 97 Bar Cool e Restaurante
 
-  Lembramos que a sua mesa decorada só será confirmada após a verificação do pagamento. Por favor, efetue o pagamento até  XX/XX/2024 às 17h e envie-nos o comprovante para garantir a sua mesa decorada.
+  Lembramos que a sua mesa decorada só será confirmada após a verificação do pagamento. Por favor, efetue o pagamento até  ${payload.formattedDate} às 17h e envie-nos o comprovante para garantir a sua mesa decorada.
     
     *LEIA COM ATENÇÃO:* 
     - Não cobramos taxa para reservar mesa por isso seja educado, em caso de desistência nos avise!

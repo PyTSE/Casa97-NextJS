@@ -24,7 +24,7 @@ const Hero = () => {
             ))}
           </div>
           <p className='bold-16 lg:bold-20 text-blue-70 text-gray-50'>
-            19k
+            1800
             <span className='regular-16 text-gray-50 lg:regular-20 ml-1'>Avaliações Excelentes</span>
           </p>
         </div>
