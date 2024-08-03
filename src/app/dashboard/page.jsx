@@ -500,7 +500,7 @@ export default function TabelaDeReservas() {
           </Button>
         </div>
         <div className="">
-          {showFilters && <FilterComponent columns={columns}/>}
+          {showFilters && <FilterComponent columns={columns} locais={locais} mesas={mesas}/>}
         </div>
       </div>
       <div className="rounded-md border">
