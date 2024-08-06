@@ -7,7 +7,7 @@ import Link from 'next/link'
 const EventsSection = () => {
   return (
     <section className='bg-events sm:bg-events-sm flexCenter flex-col'>
-      <h2 className='bold-40 lg:bold-64 mt-10 text-gray-50'>Serviços Extras</h2>
+      <h2 className='bold-40 lg:bold-64 mt-10 text-gray-50'>Serviços</h2>
       <div className='padding-container max-container w-full flexCenter'>
         <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-10">
           {EVENTS_INFO.map((event) => (
@@ -17,7 +17,7 @@ const EventsSection = () => {
                 <img src={event.photo} className="rounded-md max-h-96 object-cover w-full"/>
               </CardHeader>
               <CardContent className="flex-grow">
-                <div className='mb-4 text-justify'>
+                <div className='mb-4 md:text-justify'>
                   <p>{event.description}</p>
                 </div>
               </CardContent>

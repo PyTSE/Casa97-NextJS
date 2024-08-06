@@ -17,7 +17,7 @@ export const FOOTER_CONTACT_INFO = {
     title: 'Entre em contato conosco',
     links: [
         {label: 'WhatsApp', value: '(47) 3227-9537', link: 'https://wa.me/554732279537'},
-        {label: 'Email', value: 'contato@casa97.com.br', link: ''},
+        {label: 'Email', value: 'contatocasa97@gmail.com', link: ''},
     ],
 };
 

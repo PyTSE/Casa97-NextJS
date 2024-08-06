@@ -79,7 +79,7 @@ const locations = [
             <Card className="flex flex-col h-full">
               <CardHeader className="flex-grow">
                 <CardTitle className="bold-40">{location.title}</CardTitle>
-                <CardDescription className="text-md text-justify">{location.description}</CardDescription>
+                <CardDescription className="text-md md:text-justify">{location.description}</CardDescription>
               </CardHeader>
               <CardContent className="w-full">
                 <CarouselDemo photos={location.photos} />

@@ -77,6 +77,9 @@ export default function TabelaDeReservas() {
   const [isDisableDialogOpen, setIsDisableDialogOpen] = React.useState(null);
   const [cart, setCart] = React.useState({});
   const [showFilters, setShowFilters] = React.useState(false);
+  const [filteredData, setFilteredData] = React.useState([]);
+  const [tableData, setTableData] = React.useState([]);
+  const [filtersOn, setFiltersOn] = React.useState(false);
   
   React.useEffect(() => {
     const dbRef = ref(database, "reservas");
@@ -116,7 +119,10 @@ export default function TabelaDeReservas() {
         });
   
         Promise.all(reservasPromises)
-          .then(reservas => setReservasData(reservas))
+        .then(reservas => {
+          setTableData(reservas);
+          setReservasData(reservas);
+        })
           .catch(error => console.error("Erro ao carregar reservas:", error));
       } else {
         setReservasData([]);
@@ -163,7 +169,6 @@ export default function TabelaDeReservas() {
     calculateTotal();
   }, [cart, itensAdicionais]);
   
-
   const columns = [
     {
       accessorKey: "name",
@@ -315,8 +320,16 @@ export default function TabelaDeReservas() {
     }    
   ];
 
+  const handleFilter = (data) => {
+    setFilteredData(data);
+    setTableData(data);
+    setFiltersOn(true);
+    setShowFilters(false);
+    console.log("Dados filtrados recebidos pelo pai:", data);
+  };
+
   const table = useReactTable({
-    data: reservas,
+    data: tableData,
     columns,
     state: {
       sorting,
@@ -371,7 +384,6 @@ export default function TabelaDeReservas() {
     }, 0);
   };
   
-
   const handleSubmit = async () => {
     if (reservationToCancel) {
       const reservationRef = ref(database, `reservas/${reservationToCancel.id}`);
@@ -495,15 +507,30 @@ export default function TabelaDeReservas() {
                 ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" onClick={() => setShowFilters(true)}>
-              Filtrar <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
+          <FilterComponent onFilter={handleFilter} columns={columns} locais={locais}/>
         </div>
         <div className="">
-          {showFilters && <FilterComponent columns={columns} locais={locais} mesas={mesas}/>}
+          <div className="flexEnd pr-5">
+            {filtersOn && (
+              <Button
+                onClick={() => {
+                  setFiltersOn(false);
+                  setTableData(reservas);
+                }}
+              >
+                Remover Filtros
+              </Button>
+            )
+            }
+          </div>
         </div>
       </div>
       <div className="rounded-md border">
+      {tableData.length === 0 ? (
+          <div className="flex justify-center items-center h-full">
+            <p>Nenhuma reserva encontrada.</p>
+          </div>
+      ) : (
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -551,6 +578,7 @@ export default function TabelaDeReservas() {
             )}
           </TableBody>
         </Table>
+      )}
       </div>
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
