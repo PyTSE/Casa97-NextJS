@@ -6,7 +6,7 @@ import {
 export function CommandDemo() {
   return (
     <Command className="rounded-lg border shadow-md">
-      <CommandInput placeholder="Procurar no Sistema Casa97..." />
+      <CommandInput placeholder="" />
     </Command>
   )
 }

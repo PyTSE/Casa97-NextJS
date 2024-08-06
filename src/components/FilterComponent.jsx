@@ -9,7 +9,10 @@ import { Button } from "./ui/button";
 import { getDatabase, onValue, query, ref, orderByChild, startAt, endAt, get } from "firebase/database";
 import { initializeApp } from "firebase/app";
 import { firebaseConfig } from "@/constants";
+import { useMediaQuery } from 'react-responsive';
 import { ChevronDown } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
+
 
 export default function FilterComponent({ onFilter, columns, locais }) {
   const filteredColumns = columns.filter((column) =>
@@ -33,7 +36,7 @@ export default function FilterComponent({ onFilter, columns, locais }) {
 
   const firebaseApp = initializeApp(firebaseConfig);
   const database = getDatabase(firebaseApp);
-
+  const isSmallScreen = useMediaQuery({ query: '(max-width: 768px)' });
   useEffect(() => {
     const extractedMesas = [];
     locais.forEach((local) => {
@@ -132,7 +135,7 @@ export default function FilterComponent({ onFilter, columns, locais }) {
             filteredReservations[key] = reservation;
           }
         });
-        
+
         const reservasPromises = Object.keys(filteredReservations).map(async (key) => {
           const reserva = filteredReservations[key];
           const mesaRef = ref(database, `spaces/${reserva.localId}/mesas/${reserva.mesaId}`);
@@ -196,107 +199,204 @@ export default function FilterComponent({ onFilter, columns, locais }) {
       <Button onClick={toggleShowFilters} className="ml-2">
         Filtrar <ChevronDown className="ml-2 h-4 w-4" />
       </Button>
-      {showFilters && (
-        <form onSubmit={handleSubmitFilter}>
-          <div className="grid grid-cols-4 gap-4 m-6">
-            <div className="flexCenter flex-col gap-2">
-              <Label>Nome do Cliente</Label>
-              <Input
-                id="name"
-                className="border-2 rounded-sm text-center"
-                type="text"
-                name="name"
-                placeholder="Nome do Cliente"
-                value={selectedName}
-                onChange={(e) => setSelectedName(e.target.value)}
-              />
+      {isSmallScreen ? (
+        <Dialog open={showFilters} onClose={() => setShowFilters(false)}>
+          <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="text-lg font-medium">Filtros</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmitFilter}>
+                <div className="grid grid-cols-1 gap-4 mt-4">
+                  <div className="flex flex-col gap-2">
+                    <Label>Nome do Cliente</Label>
+                    <Input
+                      id="name"
+                      className="border-2 rounded-sm"
+                      type="text"
+                      name="name"
+                      placeholder="Nome do Cliente"
+                      value={selectedName}
+                      onChange={(e) => setSelectedName(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Data Início</Label>
+                    <DatePicker
+                      id="data-start"
+                      className="border-2 rounded-sm"
+                      onChange={(date) => handleDates('start', date.toISOString().split('T')[0])}
+                      locale={ptBR}
+                      placeholderText="Selecione uma data"
+                      dateFormat="dd/MM/yyyy"
+                      type="date"
+                      name="start"
+                      value={dateStartFormated}
+                      maxDate={dateEnd}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Data Fim</Label>
+                    <DatePicker
+                      id="data-end"
+                      className="border-2 rounded-sm"
+                      onChange={(date) => handleDates('end', date.toISOString().split('T')[0])}
+                      locale={ptBR}
+                      placeholderText="Selecione uma data"
+                      dateFormat="dd/MM/yyyy"
+                      type="date"
+                      name="end"
+                      value={dateEndFormated}
+                      minDate={dateStart}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Local</Label>
+                    <Select
+                      value={selectedLocal || ""}
+                      onValueChange={handleLocalMesaChange}
+                    >
+                      <SelectTrigger className="border-2 rounded-sm">
+                        <SelectValue placeholder="Selecione um local" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locais.map((local) => (
+                          <SelectItem key={local.id} value={local.id}>
+                            {local.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Mesa</Label>
+                    <Select
+                      value={selectedMesa || ""}
+                      onValueChange={handleMesaChange}
+                    >
+                      <SelectTrigger className="border-2 rounded-sm">
+                        <SelectValue placeholder="Selecione uma mesa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mesas.map((mesa) => (
+                          <SelectItem key={mesa.id} value={mesa.id}>
+                            {mesa.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button type="submit" className="flex-1">Aplicar</Button>
+                  <Button type="button" onClick={() => setShowFilters(false)} className="flex-1">Cancelar</Button>
+                  <Button type="button" onClick={clearFilters} className="flex-1">Limpar</Button>
+                </div>
+              </form>
+          </DialogContent>
+        </Dialog>
+      ) : (
+        showFilters && (
+          <form onSubmit={handleSubmitFilter}>
+            <div className="grid grid-cols-4 gap-4 m-6">
+              <div className="flexCenter flex-col gap-2">
+                <Label>Nome do Cliente</Label>
+                <Input
+                  id="name"
+                  className="border-2 rounded-sm text-center"
+                  type="text"
+                  name="name"
+                  placeholder="Nome do Cliente"
+                  value={selectedName}
+                  onChange={(e) => setSelectedName(e.target.value)}
+                />
+              </div>
+              <div className="flexCenter flex-col gap-2">
+                <Label>Data Início</Label>
+                <DatePicker
+                  id="data-start"
+                  className="border-2 rounded-sm text-center cursor-pointer"
+                  onChange={(date) => handleDates('start', date.toISOString().split('T')[0])}
+                  locale={ptBR}
+                  placeholderText="Selecione uma data"
+                  dateFormat="dd/MM/yyyy"
+                  type="date"
+                  name="start"
+                  value={dateStartFormated}
+                  maxDate={dateEnd}
+                />
+              </div>
+              <div className="flexCenter flex-col gap-2">
+                <Label>Data Fim</Label>
+                <DatePicker
+                  id="data-end"
+                  className="border-2 rounded-sm text-center cursor-pointer"
+                  onChange={(date) => handleDates('end', date.toISOString().split('T')[0])}
+                  locale={ptBR}
+                  placeholderText="Selecione uma data"
+                  dateFormat="dd/MM/yyyy"
+                  type="date"
+                  name="end"
+                  value={dateEndFormated}
+                  disabled={!dateStartFormated}
+                  minDate={dateStart}
+                />
+              </div>
+              <div className="flexCenter flex-col gap-2">
+                <Label>Local</Label>
+                <Select
+                  value={selectedLocal}
+                  onValueChange={handleLocalMesaChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione um local" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Locais</SelectLabel>
+                      {locais.map((local) => (
+                        <SelectItem key={local.id} value={local.id}>
+                          {local.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flexCenter flex-col gap-2">
+                <Label>Mesa</Label>
+                <Select
+                  value={selectedMesa}
+                  onValueChange={handleMesaChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione uma mesa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Mesas</SelectLabel>
+                      {mesas.map((mesa) => (
+                        <SelectItem key={mesa.id} value={mesa.id}>
+                          {mesa.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flexCenter flex-col gap-2">
-              <Label>Data Início</Label>
-              <DatePicker
-                id="data-start"
-                className="border-2 rounded-sm text-center cursor-pointer"
-                onChange={(date) => handleDates('start', date.toISOString().split('T')[0])}
-                locale={ptBR}
-                placeholderText="Selecione uma data"
-                dateFormat="dd/MM/yyyy"
-                type="date"
-                name="start"
-                value={dateStartFormated}
-                maxDate={dateEnd}
-              />
+            <div className="flexEnd mt-4">
+              <Button type="submit" className="mr-2">
+                Aplicar Filtros
+              </Button>
+              <Button type="button" className="mr-2" onClick={() => setShowFilters(false)}>
+                Cancelar
+              </Button>
+              <Button type="button" onClick={() => clearFilters()}>
+                Limpar Filtros
+              </Button>
             </div>
-            <div className="flexCenter flex-col gap-2">
-              <Label>Data Fim</Label>
-              <DatePicker
-                id="data-end"
-                className="border-2 rounded-sm text-center cursor-pointer"
-                onChange={(date) => handleDates('end', date.toISOString().split('T')[0])}
-                locale={ptBR}
-                placeholderText="Selecione uma data"
-                dateFormat="dd/MM/yyyy"
-                type="date"
-                name="end"
-                value={dateEndFormated}
-                disabled={!dateStartFormated}
-                minDate={dateStart}
-              />
-            </div>
-            <div className="flexCenter flex-col gap-2">
-              <Label>Local</Label>
-              <Select
-                value={selectedLocal}
-                onValueChange={handleLocalMesaChange}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione um local" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Locais</SelectLabel>
-                    {locais.map((local) => (
-                      <SelectItem key={local.id} value={local.id}>
-                        {local.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flexCenter flex-col gap-2">
-              <Label>Mesa</Label>
-              <Select
-                value={selectedMesa}
-                onValueChange={handleMesaChange}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione um local" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Locais</SelectLabel>
-                    {mesas.map((mesas) => (
-                      <SelectItem key={mesas.id} value={mesas.id}>
-                        {mesas.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flexEnd mt-4">
-            <Button type="submit" className="mr-2">
-              Aplicar Filtros
-            </Button>
-            <Button type="button" className="mr-2" onClick={() => setShowFilters(false)}>
-              Cancelar
-            </Button>
-            <Button type="button" onClick={() => clearFilters()}>
-              Limpar Filtros
-            </Button>
-          </div>
-        </form>
+          </form>
+        )
       )}
     </>
   );
