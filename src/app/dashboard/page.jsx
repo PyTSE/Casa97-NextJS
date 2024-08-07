@@ -28,8 +28,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
+} from "@/components/ui/table";import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
+
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, get, remove, update } from "firebase/database";
 import { firebaseConfig } from "@/constants";
@@ -325,7 +325,6 @@ export default function TabelaDeReservas() {
     setTableData(data);
     setFiltersOn(true);
     setShowFilters(false);
-    console.log("Dados filtrados recebidos pelo pai:", data);
   };
 
   const table = useReactTable({
@@ -442,7 +441,6 @@ export default function TabelaDeReservas() {
 
   const handleSaveEdit = async (event) => {
     event.preventDefault();
-    console.log(cart);
     const whatsappCliente = whatsapp;
     const localSelecionado = localId;
     const mesaSelecionada = mesaId;
@@ -459,7 +457,10 @@ export default function TabelaDeReservas() {
     try {
       const reservaRef = ref(database, `reservas/${reservationToEdit.id}`);
       await update(reservaRef, updatedReservation);
-      toast.success('Reserva atualizada com sucesso!');
+      toast({
+        variant: "outline",
+        title: "Reserva atualizada com sucesso!",
+      });
       setIsEditDialogOpen(false);
       setCart({});
       setShowItensAdicionaisEdit(false);
@@ -531,6 +532,7 @@ export default function TabelaDeReservas() {
             <p>Nenhuma reserva encontrada.</p>
           </div>
       ) : (
+        <>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -578,6 +580,27 @@ export default function TabelaDeReservas() {
             )}
           </TableBody>
         </Table>
+        <div className="flexCenter gap-4 p-5">
+          <Button
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {"<"}
+          </Button>
+          <span>
+            Página{" "}
+            <strong>
+              {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
+            </strong>{" "}
+          </span>
+          <Button
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            {">"}
+          </Button>
+        </div>
+        </>
       )}
       </div>
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

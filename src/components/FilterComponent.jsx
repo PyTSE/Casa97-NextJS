@@ -199,7 +199,6 @@ export default function FilterComponent({ onFilter, columns, locais }) {
       <Button onClick={toggleShowFilters} className="ml-2">
         Filtrar <ChevronDown className="ml-2 h-4 w-4" />
       </Button>
-      {isSmallScreen ? (
         <Dialog open={showFilters} onClose={() => setShowFilters(false)}>
           <DialogContent>
               <DialogHeader>
@@ -294,110 +293,6 @@ export default function FilterComponent({ onFilter, columns, locais }) {
               </form>
           </DialogContent>
         </Dialog>
-      ) : (
-        showFilters && (
-          <form onSubmit={handleSubmitFilter}>
-            <div className="grid grid-cols-4 gap-4 m-6">
-              <div className="flexCenter flex-col gap-2">
-                <Label>Nome do Cliente</Label>
-                <Input
-                  id="name"
-                  className="border-2 rounded-sm text-center"
-                  type="text"
-                  name="name"
-                  placeholder="Nome do Cliente"
-                  value={selectedName}
-                  onChange={(e) => setSelectedName(e.target.value)}
-                />
-              </div>
-              <div className="flexCenter flex-col gap-2">
-                <Label>Data Início</Label>
-                <DatePicker
-                  id="data-start"
-                  className="border-2 rounded-sm text-center cursor-pointer"
-                  onChange={(date) => handleDates('start', date.toISOString().split('T')[0])}
-                  locale={ptBR}
-                  placeholderText="Selecione uma data"
-                  dateFormat="dd/MM/yyyy"
-                  type="date"
-                  name="start"
-                  value={dateStartFormated}
-                  maxDate={dateEnd}
-                />
-              </div>
-              <div className="flexCenter flex-col gap-2">
-                <Label>Data Fim</Label>
-                <DatePicker
-                  id="data-end"
-                  className="border-2 rounded-sm text-center cursor-pointer"
-                  onChange={(date) => handleDates('end', date.toISOString().split('T')[0])}
-                  locale={ptBR}
-                  placeholderText="Selecione uma data"
-                  dateFormat="dd/MM/yyyy"
-                  type="date"
-                  name="end"
-                  value={dateEndFormated}
-                  disabled={!dateStartFormated}
-                  minDate={dateStart}
-                />
-              </div>
-              <div className="flexCenter flex-col gap-2">
-                <Label>Local</Label>
-                <Select
-                  value={selectedLocal}
-                  onValueChange={handleLocalMesaChange}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione um local" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Locais</SelectLabel>
-                      {locais.map((local) => (
-                        <SelectItem key={local.id} value={local.id}>
-                          {local.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flexCenter flex-col gap-2">
-                <Label>Mesa</Label>
-                <Select
-                  value={selectedMesa}
-                  onValueChange={handleMesaChange}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione uma mesa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Mesas</SelectLabel>
-                      {mesas.map((mesa) => (
-                        <SelectItem key={mesa.id} value={mesa.id}>
-                          {mesa.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flexEnd mt-4">
-              <Button type="submit" className="mr-2">
-                Aplicar Filtros
-              </Button>
-              <Button type="button" className="mr-2" onClick={() => setShowFilters(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" onClick={() => clearFilters()}>
-                Limpar Filtros
-              </Button>
-            </div>
-          </form>
-        )
-      )}
     </>
   );
 }

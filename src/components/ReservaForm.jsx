@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { CalendarCheck, Moon, Sun, ShoppingCart, Circle } from "lucide-react";
 import { useTheme } from "next-themes";
 import Image from 'next/image';
-import { parseISO, addDays, isBefore, isEqual } from 'date-fns';
+import { format, parseISO, addDays, isBefore, isEqual } from 'date-fns';
 import Logo from '../../public/casa97.png';
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from './ui/select';
@@ -309,6 +309,11 @@ const ReservaForm = (props) => {
     setMesaNome(mesa.numero);
   };
 
+  const formatDateToISO = (dateString) => {
+    const parsedDate = new Date(dateString);
+    return format(parsedDate, 'yyyy-MM-dd');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -363,6 +368,7 @@ const ReservaForm = (props) => {
         setShowDropdowns(false);
         setShowItensAdicionais(false);
         setshowInitialForm(true);
+        setFotoLocal(null);
 
         toast({
           icon: <CalendarCheck />,
@@ -379,7 +385,11 @@ const ReservaForm = (props) => {
         });
       });
   };
-  
+
+  const handleDateChange = (date) => {
+    const formattedDate = formatDateToISO(date);
+    setData(formattedDate);
+  };
 
   const handleItemChange = (itemId) => {
     setSelectedItensAdicionais((prevSelected) =>
@@ -467,8 +477,8 @@ const ReservaForm = (props) => {
                     <DatePicker
                       id="data"
                       className="border-2 rounded-sm text-center cursor-pointer"
-                      selected={dataReserva}
-                      onChange={(date) => setData(date.toISOString().split('T')[0])}
+                      selected={dataReserva ? parseISO(dataReserva) : null}
+                      onChange={handleDateChange}
                       required
                       locale={ptBR}
                       placeholderText="Selecione uma data"
@@ -515,7 +525,7 @@ const ReservaForm = (props) => {
               <>
                 <div className='flex flex-col lg:flex-row gap-4 justify-around my-4'>
                   <div className='flexCenter flex-col gap-4 lg:mr-10'>
-                    <Select id="local" onValueChange={handleLocalMesaChange}>
+                    <Select id="local" onValueChange={handleLocalMesaChange} value={localId}>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecione um local" />
                       </SelectTrigger>

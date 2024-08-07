@@ -57,6 +57,8 @@ export default function ItemsTable() {
   const [selectedItem, setSelectedItem] = React.useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [photoPreview, setPhotoPreview] = React.useState(null);
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(10);
 
   const spacesColumns = [
     {
@@ -146,8 +148,6 @@ export default function ItemsTable() {
       console.error("Erro ao adicionar novo item:", error);
     }
   };
-  
-  
 
   const handleAddPhoto = async (itemId, photoFile) => {
     try {
@@ -345,6 +345,26 @@ export default function ItemsTable() {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className="flexCenter gap-4 p-5">
+        <Button
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          {"<"}
+        </Button>
+        <span>
+          Página{" "}
+          <strong>
+            {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
+          </strong>{" "}
+        </span>
+        <Button
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          {">"}
+        </Button>
       </div>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
