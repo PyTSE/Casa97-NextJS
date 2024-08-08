@@ -42,6 +42,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import AuthGuard from "@/components/AuthGuard";
 import { toast } from "@/components/ui/use-toast";
 import FilterComponent from "@/components/FilterComponent";
+import moment from "moment-timezone";
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -81,6 +82,10 @@ export default function TabelaDeReservas() {
   const [tableData, setTableData] = React.useState([]);
   const [filtersOn, setFiltersOn] = React.useState(false);
   
+
+  const hoje = moment.tz('America/Sao_Paulo').format('YYYY-MM-DD');
+  console.log(hoje);
+
   React.useEffect(() => {
     const dbRef = ref(database, "reservas");
     const unsubscribe = onValue(dbRef, (snapshot) => {
@@ -117,21 +122,36 @@ export default function TabelaDeReservas() {
             ended: reserva.finalizado,
           };
         });
-  
+        
         Promise.all(reservasPromises)
         .then(reservas => {
-          setTableData(reservas);
-          setReservasData(reservas);
+          // Ordenar reservas: futuras primeiro, passadas depois
+          const sortedReservas = reservas.sort((a, b) => {
+            const dateA = moment.tz(a.reservationDate, 'America/Sao_Paulo').startOf('day');
+            const dateB = moment.tz(b.reservationDate, 'America/Sao_Paulo').startOf('day');
+          
+            // Se a data for menor que hoje, deve ficar por último
+            const isBeforeHojeA = dateA.isBefore(hoje);
+            const isBeforeHojeB = dateB.isBefore(hoje);
+          
+            if (isBeforeHojeA && !isBeforeHojeB) return 1; // dateA deve vir depois de dateB
+            if (!isBeforeHojeA && isBeforeHojeB) return -1; // dateA deve vir antes de dateB
+          
+            // Comparar datas se ambas forem antes ou depois de hoje
+            return dateA.isBefore(dateB) ? -1 : 1;
+          });
+          setTableData(sortedReservas);
+          setReservasData(sortedReservas);
         })
-          .catch(error => console.error("Erro ao carregar reservas:", error));
+        .catch(error => console.error("Erro ao carregar reservas:", error));
       } else {
         setReservasData([]);
       }
     });
-  
+    
     return () => unsubscribe();
   }, []);
-
+  
   React.useEffect(() => {
     const locaisRef = ref(database, "spaces");
     const unsubscribe = onValue(locaisRef, (snapshot) => {
@@ -443,6 +463,11 @@ export default function TabelaDeReservas() {
     setShowItensAdicionaisEdit(true);
   };
 
+  const isOldReservation = (reservationDate) => {
+    const reservationDateObj = moment.tz(reservationDate, 'America/Sao_Paulo').startOf('day');
+    return reservationDateObj.isBefore(hoje, 'day');
+  };
+
   const handleSaveEdit = async (event) => {
     event.preventDefault();
     const whatsappCliente = whatsapp;
@@ -566,6 +591,7 @@ export default function TabelaDeReservas() {
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
+                  className={isOldReservation(row.original.reservationDate) ? "bg-neutral-300" : ""}
                   data-state={row.getIsSelected() ? "selected" : ""}
                 >
                   {row.getVisibleCells().map((cell) => (

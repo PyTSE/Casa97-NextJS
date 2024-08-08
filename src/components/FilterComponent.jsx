@@ -54,10 +54,6 @@ export default function FilterComponent({ onFilter, columns, locais }) {
   
     setMesas(extractedMesas);
   }, [locais]);
-  
-
-  console.log("Mesas:", mesas);
-  
 
   const handleDates = (type, date) => {
     if (type === 'end') {
@@ -172,7 +168,6 @@ export default function FilterComponent({ onFilter, columns, locais }) {
           .then(reservas => {
             onFilter(reservas);
             setShowFilters(false);
-            console.log("Reservas filtradas:", reservas);
             
           })
           .catch(error => console.error("Erro ao formatar reservas filtradas:", error));
