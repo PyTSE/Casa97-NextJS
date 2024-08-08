@@ -289,6 +289,8 @@ const ReservaForm = (props) => {
     const parsedDate = new Date(dateString);
     return format(parsedDate, 'yyyy-MM-dd');
   };
+  const [year, month, day] = dataReserva.split('-');
+  const formattedDate = `${day}/${month}/${year}`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -311,11 +313,7 @@ const ReservaForm = (props) => {
       timestamp: new Date().toISOString()
     };
     setIsDialogFinalOpen(true);
-    const formattedDate = new Intl.DateTimeFormat('pt-BR', {
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-    }).format(new Date(dataReserva));
+    console.log(formattedDate);
     const payload = {
       formattedDate,
       nome,
@@ -366,6 +364,7 @@ const ReservaForm = (props) => {
     const formattedDate = formatDateToISO(date);
     setData(formattedDate);
   };
+
 
   const handleItemChange = (itemId) => {
     setSelectedItensAdicionais((prevSelected) =>
@@ -484,8 +483,8 @@ const ReservaForm = (props) => {
                     <DatePicker
                       id="data"
                       className="border-2 rounded-sm text-center cursor-pointer"
-                      selected={dataReserva}
-                      onChange={(date) => setData(date)}
+                      selected={dataReserva ? parseISO(dataReserva) : null}
+                      onChange={handleDateChange}
                       required
                       locale={ptBR}
                       placeholderText="Selecione uma data"
