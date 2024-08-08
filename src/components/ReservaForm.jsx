@@ -64,15 +64,6 @@ const ReservaForm = (props) => {
   const [userClass, setUserClass] = useState('');
   const [localNome, setLocalNome] = useState('');
   const [mesaNome, setMesaNome] = useState(''); 
-  
-  
-  const formatDate = (date) => {
-    const d = new Date(date);
-    const month = `${d.getMonth() + 1}`.padStart(2, '0');
-    const day = `${d.getDate()}`.padStart(2, '0');
-    const year = d.getFullYear();
-    return [year, month, day].join('-');
-  };
 
   const fetchDesativacaoIntervals = async () => {
     const intervalsRef = ref(database, "intervalosDesativacao");
@@ -81,22 +72,20 @@ const ReservaForm = (props) => {
     return data ? Object.values(data) : [];
   };
 
-  const generateExcludedDates = (intervals) => {
-    let excludedDates = [];
-  
-    intervals.forEach(interval => {
-      let startDate = parseISO(interval.dataInicio); // Garantir que a data seja interpretada corretamente
-      let endDate = parseISO(interval.dataFim);
-      let currentDate = startDate;
-  
-      while (isBefore(currentDate, endDate) || isEqual(currentDate, endDate)) {
-        excludedDates.push(currentDate);
-        currentDate = addDays(currentDate, 1);
-      }
-    });
-  
-    return excludedDates;
+  const normalizeDate = (date) => {
+    const newDate = new Date(date);
+    newDate.setHours(0, 0, 0, 0); // Define as horas para meia-noite
+    return newDate;
   };
+
+  const formatDateToYearMonthDay = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // `getMonth()` retorna 0-11, então somamos 1
+    const day = String(date.getDate()).padStart(2, '0');
+  
+    return `${year}-${month}-${day}`;
+  };
+  
 
   useEffect(() => {
     const fetchIntervals = async () => {
@@ -107,19 +96,6 @@ const ReservaForm = (props) => {
     fetchIntervals();
   }, []);
 
-  useEffect(() => {
-    if (desativacaoIntervals.length > 0) {
-      const dates = generateExcludedDates(desativacaoIntervals);
-      setExcludedDates(dates);
-    }
-  }, [desativacaoIntervals]);
-
-  const today = new Date();
-  const minDate = formatDate(today);
-
-  const futureDate = new Date();
-  futureDate.setDate(today.getDate() + 7);
-  const maxDate = formatDate(futureDate);
 
   useEffect(() => {
     if(props.type === 'user'){
@@ -403,8 +379,24 @@ const ReservaForm = (props) => {
     filter: theme === 'dark' ? 'brightness(0) invert(1)' : 'none'
   };
   
-  const isMesaAtiva = (mesa) => mesa.ativo !== false;
+  const isDateDisabled = (date) => {
+    const normalizedDate = formatDateToYearMonthDay(date);
+    return desativacaoIntervals.some(
+      (range) =>
+        normalizedDate >= (range.dataInicio) &&
+        normalizedDate <= (range.dataFim)
+    );
+  };
 
+  const isMesaAtiva = (mesa) => mesa.ativo !== false;
+  
+  const today = new Date();
+  const minDate = new Date();
+  
+  const futureDate = new Date();
+  futureDate.setDate(today.getDate() + 7);
+  const maxDate = futureDate;
+  
   return (
     <>
       <Card className={`w-full max-h-full overflow-y-auto ${userClass}`}>
@@ -484,7 +476,7 @@ const ReservaForm = (props) => {
                       placeholderText="Selecione uma data"
                       minDate={minDate}
                       maxDate={maxDate}
-                      excludeDates={excludedDates}
+                      filterDate={(date) => !isDateDisabled(date)}
                       dateFormat="dd/MM/yyyy"
                     />
                   )}

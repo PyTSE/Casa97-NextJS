@@ -57,8 +57,7 @@ export default function ItemsTable() {
   const [selectedItem, setSelectedItem] = React.useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [photoPreview, setPhotoPreview] = React.useState(null);
-  const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(10);
+  const [selectedSpaceId, setSelectedSpaceId] = React.useState(null);
 
   const spacesColumns = [
     {
@@ -97,7 +96,7 @@ export default function ItemsTable() {
                 Editar Item
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                setSelectedItemId(item.id);
+                setSelectedSpaceId(item.id);
                 setIsDeleteDialogOpen(true);
               }}>
                 Excluir Item
@@ -203,17 +202,6 @@ export default function ItemsTable() {
       value,
     }));
     setColumnFilters(newFilters);
-  };
-
-  const handleCancel = () => {
-    setIsDialogOpen(false);
-    setNumTables(0);
-  };
-
-  const handleAddTablesAndCloseDialog = () => {
-    handleAddTablesAndImage(selectedSpaceId, numTables);
-    setIsDialogOpen(false);
-    setNumTables(0);
   };
 
   const handleSaveEdit = async () => {
