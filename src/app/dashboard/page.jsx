@@ -185,6 +185,10 @@ export default function TabelaDeReservas() {
       header: "Data da Reserva",
       cell: ({ row }) => {
         const reservationDate = row.getValue("reservationDate");
+
+        if (!reservationDate) {
+          return <div></div>;
+        }
         
         const dataInicioUTC = parseISO(reservationDate);
         
