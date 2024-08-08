@@ -773,7 +773,7 @@ export default function TabelaDeReservas() {
       </DialogContent>
     </Dialog>
     <Dialog open={showReservaForm} onOpenChange={setShowReservaForm}>
-        <DialogContent className=" max-w-[40vw]">
+        <DialogContent className=" max-w-[40vw] h-full overflow-y-auto">
           <DialogHeader>
             <DialogClose asChild>
               <Button className="absolute top-4 right-4" variant="ghost">

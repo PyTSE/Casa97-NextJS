@@ -16,7 +16,7 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, push, set, onValue, get } from 'firebase/database';
 import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { firebaseConfig } from '@/constants';
-
+import { utcToZonedTime } from 'date-fns-tz';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import ReactInputMask from 'react-input-mask';
@@ -60,7 +60,6 @@ const ReservaForm = (props) => {
   const [cardTitle, setCardTitle] = useState("Reserve sua mesa na Casa97");
   const [isAdding, setIsAdding] = useState(false);
   const [desativacaoIntervals, setDesativacaoIntervals] = useState([]);
-  const [excludedDates, setExcludedDates] = useState([]);
   const [userClass, setUserClass] = useState('');
   const [localNome, setLocalNome] = useState('');
   const [mesaNome, setMesaNome] = useState(''); 
@@ -72,12 +71,6 @@ const ReservaForm = (props) => {
     return data ? Object.values(data) : [];
   };
 
-  const normalizeDate = (date) => {
-    const newDate = new Date(date);
-    newDate.setHours(0, 0, 0, 0); // Define as horas para meia-noite
-    return newDate;
-  };
-
   const formatDateToYearMonthDay = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0'); // `getMonth()` retorna 0-11, então somamos 1
@@ -86,7 +79,6 @@ const ReservaForm = (props) => {
     return `${year}-${month}-${day}`;
   };
   
-
   useEffect(() => {
     const fetchIntervals = async () => {
       const intervals = await fetchDesativacaoIntervals();
@@ -96,6 +88,25 @@ const ReservaForm = (props) => {
     fetchIntervals();
   }, []);
 
+  const date = new Date();
+  const options = {
+  timeZone: 'America/Sao_Paulo',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+  };
+  const options2 = {
+  timeZone: 'America/Sao_Paulo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  };
+  let zonedDate = date.toLocaleString('en-US', options2);
+  zonedDate = format(zonedDate, 'yyyy-MM-dd');
+  const zonedHour = date.toLocaleTimeString('pt-BR', options);
+  if(zonedHour >= '17:30'){
+    desativacaoIntervals.push({dataInicio: zonedDate, dataFim: zonedDate});
+  }
 
   useEffect(() => {
     if(props.type === 'user'){
@@ -576,7 +587,7 @@ const ReservaForm = (props) => {
             )}
             {showItensAdicionais && (
               <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 ${props === "admin" ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-5`}>
                   {itensAdicionais.map((item) => (
                     <Card key={item.id} id="itensAdicionais" onValueChange={handleItemChange} className='h-full'>
                       <CardHeader>
