@@ -43,6 +43,7 @@ import AuthGuard from "@/components/AuthGuard";
 import { toast } from "@/components/ui/use-toast";
 import FilterComponent from "@/components/FilterComponent";
 import moment from "moment-timezone";
+import { sendMessage } from "@/lib/utils";
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
@@ -84,7 +85,6 @@ export default function TabelaDeReservas() {
   
 
   const hoje = moment.tz('America/Sao_Paulo').format('YYYY-MM-DD');
-  console.log(hoje);
 
   React.useEffect(() => {
     const dbRef = ref(database, "reservas");
@@ -96,10 +96,33 @@ export default function TabelaDeReservas() {
           const mesaRef = ref(database, `spaces/${reserva.localId}/mesas/${reserva.mesaId}`);
           const localRef = ref(database, `spaces/${reserva.localId}`);
           const itemsPromises = (reserva.itensAdicionais || []).map(async (itemId) => {
-            const itemRef = ref(database, `items/${itemId}`);
-            const itemSnapshot = await get(itemRef);
-            return { id: itemId, ...itemSnapshot.val() };
+            if (!itemId) {
+              console.warn(`ItemId inválido ou vazio detectado:`, itemId);
+              return null;
+            }
+          
+            try {
+              const itemRef = ref(database, `items/${itemId}`);
+              const itemSnapshot = await get(itemRef);
+          
+              if (!itemSnapshot.exists()) {
+                console.warn(`Item com ID ${itemId} não encontrado no banco de dados.`);
+                return null;
+              }
+          
+              const itemData = itemSnapshot.val();
+              console.log(`Item ${itemId} encontrado:`, itemData);
+          
+              return {
+                id: itemId,
+                ...itemData,
+              };
+            } catch (error) {
+              console.error(`Erro ao buscar item com ID ${itemId}:`, error);
+              return null;
+            }
           });
+          
   
           const [mesaSnapshot, localSnapshot, items] = await Promise.all([
             get(mesaRef),
@@ -109,7 +132,8 @@ export default function TabelaDeReservas() {
   
           const mesaNome = mesaSnapshot.val().numero;
           const localNome = localSnapshot.val().name;
-  
+          const validItems = items.filter(item => item !== null);
+
           return {
             id: key,
             name: reserva.nome,
@@ -117,7 +141,7 @@ export default function TabelaDeReservas() {
             reservationDate: reserva.dataReserva,
             table: mesaNome,
             location: localNome,
-            items: items,
+            items: validItems,
             paid: reserva.pago,
             ended: reserva.finalizado,
           };
@@ -188,7 +212,7 @@ export default function TabelaDeReservas() {
 
     calculateTotal();
   }, [cart, itensAdicionais]);
-  
+
   const columns = [
     {
       accessorKey: "name",
@@ -234,14 +258,23 @@ export default function TabelaDeReservas() {
     {
       accessorKey: "items",
       header: "Itens Adicionais",
-      cell: ({ row }) => (
-        <ul>
-          {row.getValue("items").map((item) => (
-            <li key={item.id}>{item.name} - R$ {item.itemValue}</li>
-          ))}
-        </ul>
-      ),
-    },
+      cell: ({ row }) => {
+        const items = row.getValue("items") || [];
+        if (items.length === 0) {
+          return <div>Nenhum item adicional</div>;
+        }
+      
+        return (
+          <ul>
+            {items.map((item) => (
+              <li key={item.id}>
+                {item.name} - R$ {item.itemValue?.toFixed(2)}
+              </li>
+            ))}
+          </ul>
+        );
+      },
+    },      
     {
       accessorKey: "paid",
       header: "Pago",
@@ -468,6 +501,12 @@ export default function TabelaDeReservas() {
     return reservationDateObj.isBefore(hoje, 'day');
   };
 
+  React.useEffect(() => {
+    if (isEditDialogOpen) {
+      setShowItensAdicionaisEdit(false);
+    }
+  }, [isEditDialogOpen]);
+
   const handleSaveEdit = async (event) => {
     event.preventDefault();
     const whatsappCliente = whatsapp;
@@ -482,9 +521,13 @@ export default function TabelaDeReservas() {
       mesaId: mesaSelecionada,
       itensAdicionais: Object.keys(cart).filter(id => cart[id] > 0)
     };
+
+    console.log(updatedReservation.itensAdicionais, itensAdicionais);
   
     try {
       const reservaRef = ref(database, `reservas/${reservationToEdit.id}`);
+      const reservaSnapshot = await get(reservaRef);
+      const reservaData = reservaSnapshot.val();
       await update(reservaRef, updatedReservation);
       toast({
         variant: "outline",
@@ -493,6 +536,30 @@ export default function TabelaDeReservas() {
       setIsEditDialogOpen(false);
       setCart({});
       setShowItensAdicionaisEdit(false);
+
+      
+      const itensAdicionaisReserva = Object.keys(cart).filter(id => cart[id] > 0);
+      const itensAdicionaisEdit = itensAdicionais.filter(item => itensAdicionaisReserva.includes(item.id));
+      console.log(itensAdicionaisEdit);
+      
+      const localEdit = locais.find((item) => item.id === localSelecionado);
+      const mesaEdit = localEdit.mesas.find((item) => item.id === mesaSelecionada);      
+      const localNome = localEdit.name;
+      const mesaNome = mesaEdit.numero;
+      const numeroPessoas = reservaData.numeroPessoas;
+      const [year, month, day] = dataReserva.split('-');
+      const formattedDate = `${day}/${month}/${year}`;
+      const payload = {
+        formattedDate,
+        nome: nomeCliente,
+        whatsapp: whatsappCliente,
+        itensCarrinho: itensAdicionaisEdit.length > 0 ? itensAdicionaisEdit : 0,
+        mesaNome,
+        localNome,
+        numeroPessoas
+      }
+      await sendMessage(payload, true);
+
     } catch (error) {
       console.error('Erro ao atualizar a reserva:', error);
     }
@@ -751,7 +818,7 @@ export default function TabelaDeReservas() {
             </>
           )}
           {showItensAdicionaisEdit && (
-            <div>
+            <div className="overflow-auto max-h-96">
               {itensAdicionais.map((item) => {
               return (
                 <div key={item.id} className="mb-4">

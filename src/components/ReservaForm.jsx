@@ -263,19 +263,21 @@ const ReservaForm = (props) => {
   useEffect(() => {
     if (dataReserva && localId) {
       const reservasRef = ref(database, 'reservas');
-      onValue(reservasRef, (snapshot) => {
+      const unsubscribe = onValue(reservasRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          const reservasData = Object.keys(data).map(key => ({
+          const reservasData = Object.keys(data).map((key) => ({
             id: key,
-            ...data[key]
+            ...data[key],
           }));
-          const reservasFiltradas = reservasData.filter(reserva => reserva.dataReserva === dataReserva);
+          const reservasFiltradas = reservasData.filter((reserva) => reserva.dataReserva === dataReserva);
           setReservas(reservasFiltradas);
         } else {
           setReservas([]);
         }
       });
+  
+      return () => unsubscribe();
     }
   }, [dataReserva, localId]);
 
@@ -290,10 +292,43 @@ const ReservaForm = (props) => {
     const regex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/;
     return regex.test(nome);
   }
-
-  const handleMesaSelect = (mesa) => {
-    setMesaId(mesa.id);
-    setMesaNome(mesa.numero);
+  const handleMesaSelect = async (mesa) => {
+    if (!dataReserva) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione uma data antes de escolher a mesa.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    const reservasRef = ref(database, `reservas/${localId}`);
+    const snapshot = await get(reservasRef);
+    const reservas = snapshot.val();
+  
+    const mesaReservada = reservas
+      ? Object.values(reservas).some(
+          (reserva) =>
+            reserva.mesaId === mesa.id &&
+            reserva.dataReserva === dataReserva
+        )
+      : false;
+  
+    if (mesaReservada) {
+      toast({
+        title: "Mesa já reservada",
+        description: "Esta mesa já foi reservada para a data selecionada. Por favor, escolha outra.",
+        variant: "destructive",
+      });
+    } else {
+      setMesaId(mesa.id);
+      setMesaNome(mesas.find((mesa) => mesa.id === mesa.id)?.numero || '');
+      toast({
+        title: "Mesa selecionada",
+        description: `Mesa ${mesa.numero} selecionada com sucesso.`,
+        variant: "success",
+      });
+    }
   };
 
   const formatDateToISO = (dateString) => {
@@ -324,7 +359,6 @@ const ReservaForm = (props) => {
       timestamp: new Date().toISOString()
     };
     setIsDialogFinalOpen(true);
-    console.log(formattedDate);
     const payload = {
       formattedDate,
       nome,
@@ -332,9 +366,7 @@ const ReservaForm = (props) => {
       itensCarrinho: itensCarrinho.length > 0 ? itensCarrinho : 0,
       mesaNome,
       localNome,
-      numeroPessoas,
-      valorTotal: 30
-    
+      numeroPessoas
     }
     await sendMessage(payload);
     
