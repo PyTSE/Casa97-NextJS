@@ -292,7 +292,7 @@ const ReservaForm = (props) => {
     const regex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/;
     return regex.test(nome);
   }
-  const handleMesaSelect = async (mesa) => {
+  const handleMesaSelect = async (mesaSelecionada) => {
     if (!dataReserva) {
       toast({
         title: "Erro",
@@ -321,23 +321,23 @@ const ReservaForm = (props) => {
         variant: "destructive",
       });
     } else {
-      setMesaId(mesa.id);
-      setMesaNome(mesas.find((mesa) => mesa.id === mesa.id)?.numero || '');
+      setMesaId(mesaSelecionada.id);
+      setMesaNome(mesas.find((mesa) => mesa.id === mesaSelecionada.id)?.numero || '');   
       toast({
         title: "Mesa selecionada",
-        description: `Mesa ${mesa.numero} selecionada com sucesso.`,
+        description: `Mesa ${mesaSelecionada.numero} selecionada com sucesso.`,
         variant: "success",
       });
     }
   };
-
+  
   const formatDateToISO = (dateString) => {
     const parsedDate = new Date(dateString);
     return format(parsedDate, 'yyyy-MM-dd');
   };
   const [year, month, day] = dataReserva.split('-');
   const formattedDate = `${day}/${month}/${year}`;
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
