@@ -86,55 +86,58 @@ export default function TabelaDeReservas() {
 
   const hoje = moment.tz('America/Sao_Paulo').format('YYYY-MM-DD');
 
-  React.useEffect(() => {
-    const dbRef = ref(database, "reservas");
-    const unsubscribe = onValue(dbRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const reservasPromises = Object.keys(data).map(async (key) => {
-          const reserva = data[key];
-          const mesaRef = ref(database, `spaces/${reserva.localId}/mesas/${reserva.mesaId}`);
-          const localRef = ref(database, `spaces/${reserva.localId}`);
-          const itemsPromises = (reserva.itensAdicionais || []).map(async (itemId) => {
-            if (!itemId) {
-              console.warn(`ItemId inválido ou vazio detectado:`, itemId);
-              return null;
-            }
-          
-            try {
-              const itemRef = ref(database, `items/${itemId}`);
-              const itemSnapshot = await get(itemRef);
-          
-              if (!itemSnapshot.exists()) {
-                console.warn(`Item com ID ${itemId} não encontrado no banco de dados.`);
-                return null;
-              }
-          
-              const itemData = itemSnapshot.val();
-              console.log(`Item ${itemId} encontrado:`, itemData);
-          
-              return {
-                id: itemId,
-                ...itemData,
-              };
-            } catch (error) {
-              console.error(`Erro ao buscar item com ID ${itemId}:`, error);
-              return null;
-            }
-          });
-          
+React.useEffect(() => {
   
+  const dbRef = ref(database, "reservas");
+  const unsubscribe = onValue(dbRef, (snapshot) => {
+    
+    const data = snapshot.val();
+    
+    if (data) {
+    
+      const reservasPromises = Object.keys(data).map(async (key, index) => {
+
+        const reserva = data[key];
+
+        
+        const mesaRef = ref(database, `spaces/${reserva.localId}/mesas/${reserva.mesaId}`);
+        const localRef = ref(database, `spaces/${reserva.localId}`);
+        
+        const itemsPromises = (reserva.itensAdicionais || []).map(async (itemId, itemIndex) => {
+
+          try {
+            const itemRef = ref(database, `items/${itemId}`);
+            
+            const itemSnapshot = await get(itemRef);
+        
+            const itemData = itemSnapshot.val();
+
+            return {
+              id: itemId,
+              ...itemData,
+            };
+          } catch (error) {
+            console.error(`  💥 Erro ao buscar item com ID ${itemId}:`, error);
+            return null;
+          }
+        });
+
+        try {
+          
           const [mesaSnapshot, localSnapshot, items] = await Promise.all([
             get(mesaRef),
             get(localRef),
             Promise.all(itemsPromises)
           ]);
-  
-          const mesaNome = mesaSnapshot.val().numero;
-          const localNome = localSnapshot.val().name;
+
+          const mesaData = mesaSnapshot.val();
+          const localData = localSnapshot.val();
+
+          const mesaNome = mesaData?.numero || "Mesa não encontrada";
+          const localNome = localData?.name || "Local não encontrado";
           const validItems = items.filter(item => item !== null);
 
-          return {
+          const processedReserva = {
             id: key,
             name: reserva.nome,
             whatsapp: reserva.whatsapp,
@@ -145,36 +148,59 @@ export default function TabelaDeReservas() {
             paid: reserva.pago,
             ended: reserva.finalizado,
           };
+          
+          return processedReserva;
+          
+        } catch (error) {
+          console.error("💥 Erro ao processar reserva:", key, error);
+          return null;
+        }
+      });
+      
+      Promise.all(reservasPromises)
+      .then(reservas => {
+        const reservasValidas = reservas.filter(reserva => reserva !== null);
+        
+        const sortedReservas = reservasValidas.sort((a, b) => {
+          const dateA = moment.tz(a.reservationDate, 'America/Sao_Paulo').startOf('day');
+          const dateB = moment.tz(b.reservationDate, 'America/Sao_Paulo').startOf('day');
+          
+          const isBeforeHojeA = dateA.isBefore(hoje);
+          const isBeforeHojeB = dateB.isBefore(hoje);
+
+          if (isBeforeHojeA && !isBeforeHojeB) {
+            return 1;
+          }
+          if (!isBeforeHojeA && isBeforeHojeB) {
+            return -1;
+          }
+          
+          const result = dateA.isBefore(dateB) ? -1 : 1;
+          return result;
         });
         
-        Promise.all(reservasPromises)
-        .then(reservas => {
-          // Ordenar reservas: futuras primeiro, passadas depois
-          const sortedReservas = reservas.sort((a, b) => {
-            const dateA = moment.tz(a.reservationDate, 'America/Sao_Paulo').startOf('day');
-            const dateB = moment.tz(b.reservationDate, 'America/Sao_Paulo').startOf('day');
-          
-            // Se a data for menor que hoje, deve ficar por último
-            const isBeforeHojeA = dateA.isBefore(hoje);
-            const isBeforeHojeB = dateB.isBefore(hoje);
-          
-            if (isBeforeHojeA && !isBeforeHojeB) return 1; // dateA deve vir depois de dateB
-            if (!isBeforeHojeA && isBeforeHojeB) return -1; // dateA deve vir antes de dateB
-          
-            // Comparar datas se ambas forem antes ou depois de hoje
-            return dateA.isBefore(dateB) ? -1 : 1;
-          });
-          setTableData(sortedReservas);
-          setReservasData(sortedReservas);
-        })
-        .catch(error => console.error("Erro ao carregar reservas:", error));
-      } else {
-        setReservasData([]);
-      }
-    });
-    
-    return () => unsubscribe();
-  }, []);
+        setTableData(sortedReservas);
+        setReservasData(sortedReservas);
+        
+        console.log("✅ Estado atualizado com sucesso!");
+      })
+      .catch(error => {
+        console.error("💥 Stack trace:", error.stack);
+      });
+    } else {
+      console.log("❌ Nenhum dado encontrado no Firebase");
+      setReservasData([]);
+      setTableData([]);
+    }
+  }, (error) => {
+    console.error("💥 Erro no listener do Firebase:", error);
+  });
+  
+  return () => {
+    console.log("🛑 Limpando listener de reservas");
+    unsubscribe();
+  };
+}, []);
   
   React.useEffect(() => {
     const locaisRef = ref(database, "spaces");
