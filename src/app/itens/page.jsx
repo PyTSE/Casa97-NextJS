@@ -1,7 +1,5 @@
 "use client";
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, push, set, remove, update, get, onValue } from "firebase/database";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { database, ref, push, set, remove, update, get, onValue, storage, storageRef, uploadBytes, getDownloadURL } from "@/lib/firebase";
 import * as React from "react";
 import {
   Dialog,
@@ -34,15 +32,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useReactTable, flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, getFilteredRowModel } from "@tanstack/react-table";
-import { firebaseConfig } from "@/constants";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { NumericFormat } from "react-number-format";
 import AuthGuard from "@/components/AuthGuard";
-
-const firebaseApp = initializeApp(firebaseConfig);
-const database = getDatabase(firebaseApp);
-const storage = getStorage(firebaseApp);
 
 export default function ItemsTable() {
   const [sorting, setSorting] = React.useState([]);

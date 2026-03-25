@@ -10,8 +10,6 @@ export default function RootLayout({
   children,
 }) {
   return (
-    <html>
-      <body>
     <NextThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <div className={`${inter.className} flex justify-between`}>
         <div>
@@ -23,7 +21,5 @@ export default function RootLayout({
         </main>
       </div>
     </NextThemeProvider>
-      </body>
-    </html>
   );
 }

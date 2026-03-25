@@ -1,7 +1,7 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getDatabase, ref, push, set, remove, update, get } from "firebase/database";
-import { getStorage, ref as storageRef, uploadBytes } from "firebase/storage";
+import { getDatabase, ref, push, set, remove, update, get, onValue, query, orderByChild, startAt, endAt } from "firebase/database";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBptHQ733xIF3Bg3jLcF_FA_SHUa6M5-AI",
@@ -13,9 +13,9 @@ const firebaseConfig = {
   appId: "1:572096461268:web:49b44dd4a3501b486bbe41"
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
+const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const database = getDatabase(firebaseApp);
 const storage = getStorage(firebaseApp);
 export const auth = getAuth(firebaseApp);
 
-export { database, ref, push, set, remove, update, storage, storageRef, uploadBytes, get };
+export { database, ref, push, set, remove, update, storage, storageRef, uploadBytes, get, onValue, getDownloadURL, query, orderByChild, startAt, endAt };

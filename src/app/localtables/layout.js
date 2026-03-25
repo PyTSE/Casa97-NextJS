@@ -11,21 +11,19 @@ export default function RootLayout({
   children,
 }) {
   return (
-    <html>
-      <body>
+    <>
       <Toaster />
-    <NextThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <div className={`${inter.className} flex justify-between`}>
-        <div>
-          <Sidebar />
+      <NextThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <div className={`${inter.className} flex justify-between`}>
+          <div>
+            <Sidebar />
+          </div>
+          <main className="flex-grow">
+            <Header routeName={"Mesas"}/>
+            {children}
+          </main>
         </div>
-        <main className="flex-grow">
-          <Header routeName={"Mesas"}/>
-          {children}
-        </main>
-      </div>
-    </NextThemeProvider>
-      </body>
-    </html>
+      </NextThemeProvider>
+    </>
   );
 }

@@ -1,7 +1,12 @@
 "use client";
 
 import * as React from "react";
-import ReactInputMask from 'react-input-mask';
+const maskPhone = (value) => {
+  const d = String(value ?? '').replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : '';
+  if (d.length <= 7) return `(${d.slice(0,2)}) ${d.slice(2)}`;
+  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+};
 import {
   flexRender,
   getCoreRowModel,
@@ -30,9 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
 
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, get, remove, update } from "firebase/database";
-import { firebaseConfig } from "@/constants";
+import { database, ref, onValue, get, remove, update } from "@/lib/firebase";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { format, parseISO } from 'date-fns';
@@ -45,8 +48,6 @@ import FilterComponent from "@/components/FilterComponent";
 import moment from "moment-timezone";
 import { sendMessage } from "@/lib/utils";
 
-const firebaseApp = initializeApp(firebaseConfig);
-const database = getDatabase(firebaseApp);
 
 export default function TabelaDeReservas() {
   const [sorting, setSorting] = React.useState([]);
@@ -769,23 +770,14 @@ React.useEffect(() => {
                 onChange={(e) => setNomeCliente(e.target.value)} 
               />
               <Label htmlFor="edit-whatsapp">WhatsApp</Label>
-              <ReactInputMask
-                    id="edit-whatsapp"
-                    mask="(99) 99999-9999"
-                    value={whatsapp}
-                    defaultValue={reservationToEdit?.whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                  >
-                    {(inputProps) => (
-                      <Input
-                        {...inputProps}
-                        id="whatsapp"
-                        type="text"
-                        required
-                        placeholder="(XX) XXXXX-XXXX"
-                      />
-                    )}
-              </ReactInputMask>
+              <Input
+                id="edit-whatsapp"
+                type="tel"
+                required
+                placeholder="(XX) XXXXX-XXXX"
+                value={maskPhone(whatsapp)}
+                onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, '').slice(0, 11))}
+              />
               <Label htmlFor="data">Data da Reserva</Label>
                   <Input
                     id="data"

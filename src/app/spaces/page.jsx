@@ -1,7 +1,5 @@
 "use client";
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, push, set, remove, update, get, onValue } from "firebase/database";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { database, ref, push, set, remove, update, get, onValue, storage, storageRef, uploadBytes, getDownloadURL } from "@/lib/firebase";
 import * as React from "react";
 import {
   Dialog,
@@ -34,13 +32,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useReactTable, flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, getFilteredRowModel } from "@tanstack/react-table";
-import { firebaseConfig } from "@/constants";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import AuthGuard from "@/components/AuthGuard";
-
-const firebaseApp = initializeApp(firebaseConfig);
-const database = getDatabase(firebaseApp);
-const storage = getStorage(firebaseApp);
 
 export default function SpacesTable() {
   const [sorting, setSorting] = React.useState([]);
@@ -59,7 +52,12 @@ export default function SpacesTable() {
     {
       accessorKey: "photo",
       header: "Foto",
-      cell: ({ row }) => <img src={row.getValue("photo")} alt="Foto do Local" style={{ width: '100px' }} />,
+      cell: ({ row }) => {
+        const photo = row.getValue("photo");
+        return photo
+          ? <img src={photo} alt="Foto do Local" style={{ width: '100px' }} />
+          : <div style={{ width: '100px', height: '60px', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#9ca3af' }}>Sem foto</div>;
+      },
     },
     {
       accessorKey: "name",
@@ -139,10 +137,20 @@ export default function SpacesTable() {
 
   React.useEffect(() => {
     const dbRef = ref(database, "spaces");
-    const unsubscribe = onValue(dbRef, (snapshot) => {
+    const unsubscribe = onValue(dbRef, async (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const spaces = Object.keys(data).map((key) => ({ id: key, ...data[key] }));
+        const spaces = await Promise.all(
+          Object.keys(data).map(async (key) => {
+            const space = { id: key, ...data[key] };
+            try {
+              space.photo = await getDownloadURL(storageRef(storage, `spaces/${key}/photo.jpg`));
+            } catch {
+              space.photo = null;
+            }
+            return space;
+          })
+        );
         setSpacesData(spaces);
       } else {
         setSpacesData([]);

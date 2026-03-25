@@ -3,16 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { useEffect, useState } from "react";
-import { ref, onValue, getDatabase } from "firebase/database";
-import { database } from "@/lib/firebase";
-import { initializeApp } from "@firebase/app";
-import { firebaseConfig } from "@/constants";
+import { database, ref, onValue } from "@/lib/firebase";
 
 
 const ItensSelection = ({ handleItemChange, handleAdicionarItem, isAdding, setShowItensAdicionais, setShowDropdowns }) => {
   const [itensAdicionais, setItensAdicionais] = useState([]);
-  const firebaseApp = initializeApp(firebaseConfig);
-  const database = getDatabase(firebaseApp);
 
   useEffect(() => {
     const fetchData = async () => {

@@ -149,6 +149,8 @@ export function createMessage (payload, edit=null) {
 
 export async function sendMessage (payload, edit=null) {
   const message = createMessage(payload, edit);
+  const rawNumber = payload.whatsapp.replace(/\D/g, '');
+  const number = rawNumber.startsWith('55') ? rawNumber : `55${rawNumber}`;
 
   fetch('https://api.hand.chat/core/v2/api/chats/send-text', {
     method: 'POST',
@@ -157,7 +159,7 @@ export async function sendMessage (payload, edit=null) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      "number": payload.whatsapp,
+      "number": number,
       "message": message,
       "isWhisper": false,
       "forceSend": true,

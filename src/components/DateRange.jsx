@@ -2,13 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from '@radix-ui/react-menu';
-import { getDatabase, ref, set, onValue, remove } from '@firebase/database';
-import { initializeApp } from '@firebase/app';
-import { firebaseConfig } from '@/constants';
+import { database, ref, set, onValue, remove } from '@/lib/firebase';
 import { format, parseISO } from 'date-fns';
 import { toast } from './ui/use-toast';
-const firebaseApp = initializeApp(firebaseConfig);
-const database = getDatabase(firebaseApp);
 
 const DateRange = () => {
   const [dataInicio, setDataInicio] = useState('');

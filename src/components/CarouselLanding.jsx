@@ -21,8 +21,9 @@ export function CarouselDemo({ photos }) {
                   <Image
                     src={photo}
                     alt={`Photo ${index + 1}`}
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    style={{ objectFit: 'cover' }}
                     className="rounded-md"
                   />
                 </CardContent>

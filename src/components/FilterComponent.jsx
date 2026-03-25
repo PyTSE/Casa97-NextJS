@@ -6,9 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { format, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from './ui/select';
 import { Button } from "./ui/button";
-import { getDatabase, onValue, query, ref, orderByChild, startAt, endAt, get } from "firebase/database";
-import { initializeApp } from "firebase/app";
-import { firebaseConfig } from "@/constants";
+import { database, onValue, query, ref, orderByChild, startAt, endAt, get } from "@/lib/firebase";
 import { useMediaQuery } from 'react-responsive';
 import { ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
@@ -34,8 +32,6 @@ export default function FilterComponent({ onFilter, columns, locais }) {
   const [status, setStatus] = useState(false);
   const [mesas, setMesas] = useState([]);
 
-  const firebaseApp = initializeApp(firebaseConfig);
-  const database = getDatabase(firebaseApp);
   const isSmallScreen = useMediaQuery({ query: '(max-width: 768px)' });
   useEffect(() => {
     const extractedMesas = [];
