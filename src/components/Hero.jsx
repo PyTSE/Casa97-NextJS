@@ -29,13 +29,17 @@ const Hero = () => {
           </p>
         </div>
         <div className='flex w-full gap-3 sm:flex-row justify-center lg:justify-start'>
-        <Link href="/booking" passHref>
+        <a
+          href="https://wa.me/554732279537?text=Quero%20reservar%20uma%20mesa!"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <BookingButton
             type="button"
             title="Reservar Agora!"
             variant="h-16 bg-gray-500"
           />
-        </Link>
+        </a>
         </div>
       </div>
     </section>
