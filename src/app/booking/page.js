@@ -1,5 +1,10 @@
-import { redirect } from 'next/navigation';
+"use client";
+import ReservaForm from '../../components/ReservaForm';
 
 export default function BookingPage() {
-  redirect('https://wa.me/554732279537?text=Quero%20reservar%20uma%20mesa!');
+  return (
+    <div className="flex justify-center items-start min-h-screen py-8 px-2 sm:py-12 sm:px-6 lg:px-8">
+      <ReservaForm type="user" />
+    </div>
+  );
 }
