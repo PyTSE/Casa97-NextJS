@@ -13,7 +13,9 @@
       "Bash(tasklist /fi \"PID eq 26708\")",
       "Bash(tasklist /FI \"PID eq 26708\")",
       "Bash(cmd /c \"tasklist /FI \"\"PID eq 26708\"\"\")",
-      "Bash(cmd /c \"tasklist\")"
+      "Bash(cmd /c \"tasklist\")",
+      "Skill(superpowers:systematic-debugging)",
+      "Skill(superpowers:systematic-debugging:*)"
     ]
   }
 }

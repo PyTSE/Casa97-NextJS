@@ -584,12 +584,16 @@ const ReservaForm = ({ type = 'user' }) => {
     if (!mounted) return false;
     const normalized = formatDateToYMD(date);
     const intervals = [...desativacaoIntervals];
-    // Disable today if past 17:30 (Sao Paulo time)
-    const now = new Date();
-    const spHour = now.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false });
-    if (spHour >= '17:30') {
-      const spDate = now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' });
-      const todayStr = format(new Date(spDate), 'yyyy-MM-dd');
+    // Disable today if past 17:30 (Sao Paulo = UTC-3, no DST since 2019)
+    const nowUtcMs = Date.now();
+    const spOffsetMs = -3 * 60 * 60 * 1000;
+    const spNow = new Date(nowUtcMs + spOffsetMs);
+    const spTotalMinutes = spNow.getUTCHours() * 60 + spNow.getUTCMinutes();
+    if (spTotalMinutes >= 17 * 60 + 30) {
+      const y = spNow.getUTCFullYear();
+      const m = String(spNow.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(spNow.getUTCDate()).padStart(2, '0');
+      const todayStr = `${y}-${m}-${d}`;
       intervals.push({ dataInicio: todayStr, dataFim: todayStr });
     }
     return intervals.some((r) => normalized >= r.dataInicio && normalized <= r.dataFim);
