@@ -232,7 +232,7 @@ export default function LandingPage() {
       className="min-h-screen text-white selection:bg-[#B86E4B] selection:text-white"
       style={{ fontFamily: "'Lora', serif", background: "#0D1E14" }}
     >
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes float-leaf-1 {
           0%, 100% { transform: translateY(0px) rotate(-15deg); }
           50% { transform: translateY(-18px) rotate(-10deg); }
@@ -340,7 +340,7 @@ export default function LandingPage() {
           border-right: 1px solid rgba(255,255,255,0.1);
         }
         .stat-item:last-child { border-right: none; }
-      `}</style>
+      ` }} />
 
       {/* NAV */}
       <nav
