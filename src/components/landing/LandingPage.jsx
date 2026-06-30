@@ -142,13 +142,13 @@ function AmbienteEditorial({ ambiente, reversed }) {
   return (
     <div className="fade-up" style={{ marginBottom: 80 }}>
       {/* Title row */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: 20, marginBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 20, marginBottom: 20, flexWrap: "wrap" }}>
         <h3 style={{
           fontFamily: "'Playfair Display', serif", fontSize: "clamp(1.4rem, 2.5vw, 2rem)",
           color: "#F7F3EC", fontWeight: 700, margin: 0,
         }}>{ambiente.title}</h3>
-        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
-        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)", minWidth: 20 }} />
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {ambiente.tags.map((tag) => (
             <span key={tag} style={{
               background: "rgba(201,162,39,0.08)", border: "1px solid rgba(201,162,39,0.25)",
