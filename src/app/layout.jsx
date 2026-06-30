@@ -1,9 +1,17 @@
 // app/landing/layout.js
-import { Montserrat } from "next/font/google";
+import { Montserrat, Playfair_Display, Lora } from "next/font/google";
 import "@/app/globals.css";
 import Footer from "@/components/Footer";
 
 const montserrat = Montserrat({ subsets: ["latin"] });
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair-display",
+});
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-lora",
+});
 
 const LandingLayout = ({ children }) => {
   return (
@@ -13,7 +21,7 @@ const LandingLayout = ({ children }) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Restaurante Casa 97</title>
       </head>
-      <body className={montserrat.className}>
+      <body className={`${montserrat.className} ${playfairDisplay.variable} ${lora.variable}`}>
         <main className="relative overflow-hidden">
           {children}
         </main>
